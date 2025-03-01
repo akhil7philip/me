@@ -1,40 +1,45 @@
-#!/bin/bash
+# #!/bin/bash
 
-# Update and upgrade system packages
-sudo apt update && sudo apt upgrade -y
+# # Update and upgrade system packages
+# sudo apt update && sudo apt upgrade -y
 
-# Install required dependencies
-sudo apt install -y curl git build-essential
+# # Install required dependencies
+# sudo apt install -y curl git build-essential nginx
 
-# Install Node.js using NVM
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# # Install Node.js using NVM
+# curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+# export NVM_DIR="$HOME/.nvm"
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# Install Node.js LTS version
-nvm install --lts
-nvm use --lts
+# # Install Node.js LTS version
+# nvm install --lts
+# nvm use --lts
 
-# Verify Node.js and npm installation
-node --version
-npm --version
+# # Verify Node.js and npm installation
+# node --version
+# npm --version
 
-# Install PM2 process manager globally
-npm install -g pm2
+# # Install PM2 process manager globally
+# npm install -g pm2
 
-# # Create directory for the Next.js application
-# mkdir -p ~/me
-# cd ~/me
+# # # Create directory for the Next.js application
+# # mkdir -p ~/me
+# # cd ~/me
 
-# Install dependencies
-npm ci
+# # Install dependencies
+# npm ci
+
+# Install serve globally
+npm install -g serve
 
 # Build the Next.js application
 npm run build
 
 # Start the application with PM2
-pm2 start npm --name "me" -- start
+pm2 stop "me" || true
+pm2 delete "me" || true
+pm2 start serve --name "me" -- -s out
 
 # Save PM2 process list
 pm2 save
@@ -43,14 +48,11 @@ pm2 save
 pm2 startup
 # Execute the command that PM2 outputs
 
-# Install and configure Nginx as a reverse proxy
-sudo apt install -y nginx
-
 # Create Nginx configuration for the Next.js app
 sudo tee /etc/nginx/sites-available/me << EOF
 server {
     listen 80;
-    server_name akhilphilip.com;
+    server_name localhost akhilphilip.com;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -67,6 +69,7 @@ server {
 EOF
 
 # Enable the site configuration
+sudo rm -f /etc/nginx/sites-enabled/me
 sudo ln -s /etc/nginx/sites-available/me /etc/nginx/sites-enabled/
 
 # Test Nginx configuration
