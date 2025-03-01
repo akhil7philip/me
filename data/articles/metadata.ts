@@ -24,16 +24,16 @@ export const categories: CategoryConfig[] = [
 ];
 
 export const articles: Article[] = [
-  // {
-  //   id: 1,
-  //   title: "consciousness",
-  //   excerpt: "",
-  //   category: categories[3].name,
-  //   readTime: "1 min read",
-  //   date: "Aug 04, 2024",
-  //   image: "/images/consciousness.png",
-  //   featured: false
-  // },
+  {
+    id: 1,
+    title: "consciousness",
+    excerpt: "",
+    category: categories[3].name,
+    readTime: "1 min read",
+    date: "Aug 04, 2024",
+    image: "/images/consciousness.png",
+    featured: false
+  },
   // {
   //   id: 2,
   //   title: "faith",
