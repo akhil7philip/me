@@ -17,10 +17,10 @@ export interface CategoryConfig {
 }
 
 export const categories: CategoryConfig[] = [
+  { name: "All", icon: Newspaper },
   { name: "Featured", icon: Star },
   { name: "Technology", icon: TrendingUp },
   { name: "Reflection", icon: BookMarked },
-  { name: "All", icon: Newspaper },
 ];
 
 export const articles: Article[] = [
@@ -28,7 +28,7 @@ export const articles: Article[] = [
     id: 1,
     title: "consciousness",
     excerpt: "",
-    category: categories[2].name,
+    category: categories[3].name,
     readTime: "1 min read",
     date: "Aug 04, 2024",
     image: "/images/consciousness.png",
@@ -38,7 +38,7 @@ export const articles: Article[] = [
     id: 2,
     title: "faith",
     excerpt: "",
-    category: categories[2].name,
+    category: categories[3].name,
     readTime: "5 min read",
     date: "Dec 01, 2020",
     image: "/images/faith.jpeg",

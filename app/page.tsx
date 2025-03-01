@@ -7,8 +7,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { categories, articles, Article, CategoryConfig } from "@/data/articles/metadata";
 
-const featuredCategory = categories[0].name;
-const allCategory = categories[categories.length - 1].name;
+const allCategory = categories[0].name;
+const featuredCategory = categories[1].name;
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState(featuredCategory);
@@ -24,7 +24,7 @@ export default function Home() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Akhil Philip</h1>
-          <p className="text-muted-foreground">Technical Lead | Fascinated by Philosophy</p>
+          <p className="text-muted-foreground">Reader | Thinker | Developer</p>
         </div>
       </header>
 
