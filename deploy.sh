@@ -1,5 +1,10 @@
 # #!/bin/bash
 
+# Remove existing node_modules to ensure clean install
+echo "Removing existing node_modules..."
+rm -rf node_modules
+rm -rf package-lock.json
+
 # Run cleanup script to free up disk space
 echo "Running cleanup script to free up disk space..."
 bash scripts/cleanup.sh
@@ -20,10 +25,6 @@ bash scripts/cleanup.sh
 # nvm install --lts
 # nvm use --lts
 
-# Remove existing node_modules to ensure clean install
-echo "Removing existing node_modules..."
-rm -rf node_modules
-rm -rf package-lock.json
 
 # Verify Node.js and npm installation
 node --version
@@ -35,7 +36,10 @@ npm install -g pm2
 
 # Install dependencies with canvas marked as optional
 echo "Installing dependencies (skipping canvas)..."
-CANVAS_SKIP_INSTALLATION=1 npm install --no-optional
+# Install dependencies but exclude canvas by marking it as optional in package.json
+# The --omit=optional flag skips installing any dependencies listed under "optionalDependencies"
+# In our package.json, canvas is listed under optionalDependencies, so it gets skipped
+npm install --omit=optional
 
 # Build the Next.js application
 echo "Building Next.js application..."
