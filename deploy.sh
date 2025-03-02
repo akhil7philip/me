@@ -26,6 +26,9 @@
 # Install dependencies
 npm ci
 
+# Generate optimized OG images for social media
+npm run generate-og
+
 # No longer need to install serve globally since we're using Next.js server
 # Install serve globally
 # npm install -g serve

@@ -613,6 +613,18 @@ export default function CowsAndBulls() {
   const copyShareLink = () => {
     if (!shareLinkRef.current) return;
     
+    // Create a clean URL for sharing
+    const baseUrl = window.location.origin;
+    const shareUrl = new URL(`${baseUrl}/mini-games/cows-and-bulls`);
+    
+    // Add session ID as a parameter
+    if (gameSession) {
+      shareUrl.searchParams.set('session', gameSession.id);
+      
+      // Update the input field with the clean URL
+      shareLinkRef.current.value = shareUrl.toString();
+    }
+    
     shareLinkRef.current.select();
     document.execCommand('copy');
     setCopied(true);
@@ -847,6 +859,53 @@ export default function CowsAndBulls() {
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                    
+                    {/* Social Media Share Buttons */}
+                    <div className="ml-2 flex items-center space-x-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                const shareUrl = `${window.location.origin}/mini-games/cows-and-bulls${gameSession ? `?session=${gameSession.id}` : ''}`;
+                                window.open(`https://twitter.com/intent/tweet?text=Join my Cows and Bulls game!&url=${encodeURIComponent(shareUrl)}`, '_blank');
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                              </svg>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Share on Twitter</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                const shareUrl = `${window.location.origin}/mini-games/cows-and-bulls${gameSession ? `?session=${gameSession.id}` : ''}`;
+                                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                              </svg>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Share on Facebook</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </CardTitle>
                   <Button variant="outline" onClick={exitGame}>Exit Game</Button>
                 </div>
