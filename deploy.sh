@@ -26,8 +26,9 @@
 # Install dependencies
 npm ci
 
+# No longer need to install serve globally since we're using Next.js server
 # Install serve globally
-npm install -g serve
+# npm install -g serve
 
 # Build the Next.js application
 npm run build
@@ -35,7 +36,7 @@ npm run build
 # Start the application with PM2
 pm2 stop "me" || true
 pm2 delete "me" || true
-pm2 start serve --name "me" -- -s out
+pm2 start npm --name "me" -- start -- -p 3000
 
 # Save PM2 process list
 pm2 save

@@ -26,7 +26,7 @@ export const categories: CategoryConfig[] = [
 export const articles: Article[] = [
   {
     id: 1,
-    title: "consciousness",
+    title: "consciousness - a grand mystery",
     excerpt: "",
     category: categories[3].name,
     readTime: "1 min read",
