@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-og": "node scripts/generate-og-images.js || echo 'OG image generation failed, continuing build'"
+    "generate-og": "node scripts/generate-og-images-safe.js || echo 'OG image generation failed, continuing build'",
+    "build:local": "npm run generate-og && npm run build",
+    "prepare-deploy": "npm run generate-og && git add public/images/og && git commit -m 'Update OG images' && git push"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -46,7 +48,6 @@
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
-    "canvas": "^2.11.2",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -77,6 +78,7 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.9",
+    "canvas": "^2.11.2",
     "utf-8-validate": "^6.0.5"
   }
 }

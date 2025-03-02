@@ -20,25 +20,22 @@ bash scripts/cleanup.sh
 # nvm install --lts
 # nvm use --lts
 
+# # Remove existing node_modules to ensure clean install
+# echo "Removing existing node_modules..."
+# rm -rf node_modules
+# rm -rf package-lock.json
+
 # # Verify Node.js and npm installation
 # node --version
 # npm --version
 
 # # Install PM2 process manager globally
+# echo "Installing PM2..."
 # npm install -g pm2
 
-# Install dependencies
-echo "Installing npm dependencies..."
-npm ci
-
-# Generate optimized OG images for social media
-# If OG image generation fails, the build will continue
-# echo "Generating OG images (will continue if this fails)..."
-# npm run generate-og
-
-# No longer need to install serve globally since we're using Next.js server
-# Install serve globally
-# npm install -g serve
+# Install dependencies with canvas marked as optional
+echo "Installing dependencies (skipping canvas)..."
+CANVAS_SKIP_INSTALLATION=1 npm install --no-optional
 
 # Build the Next.js application
 echo "Building Next.js application..."
