@@ -1,5 +1,9 @@
 # #!/bin/bash
 
+# Run cleanup script to free up disk space
+echo "Running cleanup script to free up disk space..."
+bash scripts/cleanup.sh
+
 # # Update and upgrade system packages
 # sudo apt update && sudo apt upgrade -y
 
@@ -24,19 +28,24 @@
 # npm install -g pm2
 
 # Install dependencies
+echo "Installing npm dependencies..."
 npm ci
 
 # Generate optimized OG images for social media
-npm run generate-og
+# If OG image generation fails, the build will continue
+# echo "Generating OG images (will continue if this fails)..."
+# npm run generate-og
 
 # No longer need to install serve globally since we're using Next.js server
 # Install serve globally
 # npm install -g serve
 
 # Build the Next.js application
+echo "Building Next.js application..."
 npm run build
 
 # Start the application with PM2
+echo "Starting application with PM2..."
 pm2 stop "me" || true
 pm2 delete "me" || true
 pm2 start npm --name "me" -- start -- -p 3000
