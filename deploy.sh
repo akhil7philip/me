@@ -39,7 +39,8 @@ echo "Installing dependencies (skipping canvas)..."
 # Install dependencies but exclude canvas by marking it as optional in package.json
 # The --omit=optional flag skips installing any dependencies listed under "optionalDependencies"
 # In our package.json, canvas is listed under optionalDependencies, so it gets skipped
-npm install --omit=optional
+# npm install --omit=optional
+npm install
 
 # Build the Next.js application
 echo "Building Next.js application..."
