@@ -24,7 +24,7 @@ export function ArticleContent({ article }: { article: any }) {
 
       <main className="container mx-auto px-4 -mt-32 relative">
         <div className="max-w-3xl mx-auto">
-          <Link href="/">
+          <Link href="/articles">
             <Button variant="ghost" className="mb-6 hover:bg-background/50">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to articles
