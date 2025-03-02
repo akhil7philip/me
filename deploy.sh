@@ -20,18 +20,18 @@ bash scripts/cleanup.sh
 # nvm install --lts
 # nvm use --lts
 
-# # Remove existing node_modules to ensure clean install
-# echo "Removing existing node_modules..."
-# rm -rf node_modules
-# rm -rf package-lock.json
+# Remove existing node_modules to ensure clean install
+echo "Removing existing node_modules..."
+rm -rf node_modules
+rm -rf package-lock.json
 
-# # Verify Node.js and npm installation
-# node --version
-# npm --version
+# Verify Node.js and npm installation
+node --version
+npm --version
 
-# # Install PM2 process manager globally
-# echo "Installing PM2..."
-# npm install -g pm2
+# Install PM2 process manager globally
+echo "Installing PM2..."
+npm install -g pm2
 
 # Install dependencies with canvas marked as optional
 echo "Installing dependencies (skipping canvas)..."
