@@ -23,12 +23,8 @@
 # # Install PM2 process manager globally
 # npm install -g pm2
 
-# # # Create directory for the Next.js application
-# # mkdir -p ~/me
-# # cd ~/me
-
-# # Install dependencies
-# npm ci
+# Install dependencies
+npm ci
 
 # Install serve globally
 npm install -g serve
