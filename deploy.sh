@@ -1,12 +1,12 @@
 # #!/bin/bash
 
-# Remove existing node_modules to ensure clean install
-echo "Removing existing node_modules..."
-rm -rf .next
-rm -rf node_modules
-rm package-lock.json
-rm pnpm-lock.yaml
-rm -rf ~/.npm/_cacache
+# # Remove existing node_modules to ensure clean install
+# echo "Removing existing node_modules..."
+# rm -rf .next
+# rm -rf node_modules
+# rm package-lock.json
+# rm pnpm-lock.yaml
+# rm -rf ~/.npm/_cacache
 
 # # Run cleanup script to free up disk space
 # echo "Running cleanup script to free up disk space..."
@@ -29,25 +29,25 @@ rm -rf ~/.npm/_cacache
 # nvm use 18.20.5
 # npm install -g pnpm
 
-# Verify Node.js and pnpm installation
-node --version
-pnpm --version
+# # Verify Node.js and pnpm installation
+# node --version
+# pnpm --version
 
-# Install PM2 process manager globally
-echo "Installing PM2..."
-pnpm install -g pm2
+# # Install PM2 process manager globally
+# echo "Installing PM2..."
+# pnpm install -g pm2
 
-# Install dependencies with canvas marked as optional
-echo "Installing dependencies (skipping canvas)..."
-# Install dependencies but exclude canvas by marking it as optional in package.json
-# The --omit=optional flag skips installing any dependencies listed under "optionalDependencies"
-# In our package.json, canvas is listed under optionalDependencies, so it gets skipped
-# pnpm install --omit=optional
-pnpm install
+# # Install dependencies with canvas marked as optional
+# echo "Installing dependencies (skipping canvas)..."
+# # Install dependencies but exclude canvas by marking it as optional in package.json
+# # The --omit=optional flag skips installing any dependencies listed under "optionalDependencies"
+# # In our package.json, canvas is listed under optionalDependencies, so it gets skipped
+# # pnpm install --omit=optional
+# pnpm install
 
-# Build the Next.js application
-echo "Building Next.js application..."
-pnpm run build
+# # Build the Next.js application
+# echo "Building Next.js application..."
+# pnpm run build
 
 # Start the application with PM2
 echo "Starting application with PM2..."
