@@ -45,9 +45,9 @@
 # # pnpm install --omit=optional
 # pnpm install
 
-# # Build the Next.js application
-# echo "Building Next.js application..."
-# pnpm run build
+# Build the Next.js application
+echo "Building Next.js application..."
+pnpm run build
 
 # Start the application with PM2
 echo "Starting application with PM2..."
