@@ -28,7 +28,7 @@
     "@radix-ui/react-menubar": "^1.1.1",
     "@radix-ui/react-navigation-menu": "^1.2.0",
     "@radix-ui/react-popover": "^1.1.1",
-    "@radix-ui/react-progress": "^1.0.3",
+    "@radix-ui/react-progress": "1.0.3",
     "@radix-ui/react-radio-group": "^1.2.0",
     "@radix-ui/react-scroll-area": "^1.1.0",
     "@radix-ui/react-select": "^2.1.1",
@@ -74,9 +74,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
-    "zod": "^3.23.8"
-  },
-  "optionalDependencies": {
+    "zod": "^3.23.8",
     "bufferutil": "^4.0.9",
     "canvas": "^2.11.2",
     "utf-8-validate": "^6.0.5"

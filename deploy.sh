@@ -2,12 +2,15 @@
 
 # Remove existing node_modules to ensure clean install
 echo "Removing existing node_modules..."
+rm -rf .next
 rm -rf node_modules
-rm -rf package-lock.json
+rm package-lock.json
+rm pnpm-lock.yaml
+rm -rf ~/.npm/_cacache
 
-# Run cleanup script to free up disk space
-echo "Running cleanup script to free up disk space..."
-bash scripts/cleanup.sh
+# # Run cleanup script to free up disk space
+# echo "Running cleanup script to free up disk space..."
+# bash scripts/cleanup.sh
 
 # # Update and upgrade system packages
 # sudo apt update && sudo apt upgrade -y
@@ -21,36 +24,36 @@ bash scripts/cleanup.sh
 # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# # Install Node.js LTS version
-# nvm install --lts
-# nvm use --lts
+# # Install specific Node.js version and pnpm
+# nvm install 18.20.5
+# nvm use 18.20.5
+# npm install -g pnpm
 
-
-# Verify Node.js and npm installation
+# Verify Node.js and pnpm installation
 node --version
-npm --version
+pnpm --version
 
 # Install PM2 process manager globally
 echo "Installing PM2..."
-npm install -g pm2
+pnpm install -g pm2
 
 # Install dependencies with canvas marked as optional
 echo "Installing dependencies (skipping canvas)..."
 # Install dependencies but exclude canvas by marking it as optional in package.json
 # The --omit=optional flag skips installing any dependencies listed under "optionalDependencies"
 # In our package.json, canvas is listed under optionalDependencies, so it gets skipped
-# npm install --omit=optional
-npm install
+# pnpm install --omit=optional
+pnpm install
 
 # Build the Next.js application
 echo "Building Next.js application..."
-npm run build
+pnpm run build
 
 # Start the application with PM2
 echo "Starting application with PM2..."
 pm2 stop "me" || true
 pm2 delete "me" || true
-pm2 start npm --name "me" -- start -- -p 3000
+pm2 start pnpm --name "me" -- start -- -p 3000
 
 # Save PM2 process list
 pm2 save
