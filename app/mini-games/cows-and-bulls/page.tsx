@@ -218,7 +218,7 @@ export default function CowsAndBulls() {
       }],
       current_player_index: 0,
       digit_length: digit_length,
-      winner: null,
+      winner: [],
       game_started: false,
       created_at: new Date().toISOString(),
     };
@@ -443,13 +443,6 @@ export default function CowsAndBulls() {
   const submitGuess = async () => {
     if (!gameSession || !currentPlayerId) return;
     
-    // Check if it's the current player's turn
-    const currentPlayerIdx = gameSession.players.findIndex(p => p.id === currentPlayerId);
-    if (currentPlayerIdx !== gameSession.current_player_index) {
-      setError("It's not your turn!");
-      return;
-    }
-    
     // Validate guess
     if (currentGuess.length !== gameSession.digit_length) {
       setError(`Your guess must be ${gameSession.digit_length} digits long`);
@@ -494,29 +487,41 @@ export default function CowsAndBulls() {
       return player;
     });
     
-    // Check if the player won
-    let winner = gameSession.winner;
+    // Modified winner logic
+    let winner = gameSession.winner ? [...gameSession.winner] : [];
     if (bulls === gameSession.digit_length) {
-      winner = currentPlayerId;
+      const currentPlayer = updatedPlayers.find(p => p.id === currentPlayerId)!;
+      const currentGuesses = currentPlayer.guesses.length;
       
-      // Trigger confetti effect on win
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      }, 500);
+      // Initialize winner as array if not exists
+      const winners = gameSession.winner ? [...gameSession.winner] : [];
+      const existingEntry = winners.find(w => w.playerId === currentPlayerId);
+      
+      if (!existingEntry) {
+        winners.push({ playerId: currentPlayerId, guessCount: currentGuesses });
+      }
+      
+      // Find minimum guess count
+      const minGuesses = Math.min(...winners.map(w => w.guessCount));
+      winner = winners.filter(w => w.guessCount === minGuesses);
+      
+      // Only show confetti for current player's win
+      if (currentPlayerId === currentPlayerId) {
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+        }, 500);
+      }
     }
     
-    // Move to the next player's turn
-    let nextPlayerIndex = (gameSession.current_player_index + 1) % gameSession.players.length;
-    
+    // Update the session with the new winners
     const updatedSession = {
       ...gameSession,
       players: updatedPlayers,
-      current_player_index: nextPlayerIndex,
-      winner
+      winner,
     };
     
     try {
@@ -565,8 +570,7 @@ export default function CowsAndBulls() {
       ...gameSession,
       secret_number: new_secret_number,
       players: updatedPlayers,
-      current_player_index: 0,
-      winner: null,
+      winner: [],
       game_started: false,
     };
     
@@ -603,10 +607,15 @@ export default function CowsAndBulls() {
   };
   
   // Get the name of the winner
-  const getWinnerName = () => {
-    if (!gameSession || !gameSession.winner) return "";
-    const winner = gameSession.players.find(p => p.id === gameSession.winner);
-    return winner?.name || "Unknown";
+  const getWinnerNames = () => {
+    if (!gameSession || !gameSession.winner || !Array.isArray(gameSession.winner) || gameSession.winner.length === 0) return [];
+    
+    const minGuess = Math.min(...gameSession.winner.map(w => w.guessCount));
+    const winners = gameSession.winner.filter(w => w.guessCount === minGuess);
+    return winners.map(w => {
+      const player = gameSession.players.find(p => p.id === w.playerId);
+      return player?.name || "Unknown";
+    });
   };
   
   // Copy the share link to clipboard
@@ -919,18 +928,16 @@ export default function CowsAndBulls() {
                   />
                 </div>
                 <CardDescription>
-                  {gameSession.winner 
-                    ? `🎉 ${getWinnerName()} won the game! 🎉` 
-                    : gameSession.game_started 
-                      ? `${getCurrentPlayerName()}'s turn to guess` 
-                      : "Waiting for players to get ready"}
+                  {gameSession.winner && gameSession.winner.length > 0 
+                    ? `🎉 ${getWinnerNames().join(', ')} won the game! 🎉` 
+                    : "Game in progress"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {gameSession.winner ? (
                   <div className="text-center py-8">
                     <h3 className="text-2xl font-bold mb-4">
-                      🎉 {getWinnerName()} guessed the number: {gameSession.secret_number} 🎉
+                      🎉 {getWinnerNames().join(', ')} guessed the number: {gameSession.secret_number} 🎉
                     </h3>
                     <p className="mb-4">Congratulations!</p>
                     <Button onClick={resetGame} className="mr-2">Play Again</Button>
@@ -940,30 +947,34 @@ export default function CowsAndBulls() {
                   <>
                     <div className="flex justify-between mb-6 flex-wrap gap-4">
                       <div>
-                        <p className="text-sm font-medium">Current Game:</p>
-                        <p>Guess a {gameSession.digit_length}-digit number</p>
                         
-                        {!gameSession.game_started && (
-                          <div className="mt-4">
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                id="ready-status"
-                                checked={isPlayerReady}
-                                onCheckedChange={toggleReady}
-                              />
-                              <Label htmlFor="ready-status">
-                                {isPlayerReady ? "Ready to play!" : "Click when ready"}
-                              </Label>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {getActivePlayerCount() < 2 
-                                ? "Waiting for more players to join..." 
-                                : areAllPlayersReady() 
-                                  ? "All players ready! Starting game..." 
-                                  : "Waiting for all players to be ready..."}
-                            </p>
+                        {/* Updated Ready Toggle */}
+                        <div className="mt-4">
+                          <div className="flex items-center justify-center space-x-2 p-4 bg-background rounded-lg border">
+                            <Switch
+                              id="ready-status"
+                              checked={isPlayerReady}
+                              onCheckedChange={toggleReady}
+                              className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500 h-8 w-16"
+                            >
+                              <span className="block h-6 w-6 bg-background rounded-full transform transition-transform data-[state=checked]:translate-x-8">
+                                {isPlayerReady ? (
+                                  <span className="flex items-center justify-center h-full text-green-500">✓</span>
+                                ) : (
+                                  <span className="flex items-center justify-center h-full text-red-500">✕</span>
+                                )}
+                              </span>
+                            </Switch>
+                            <Label htmlFor="ready-status" className="text-lg font-bold">
+                              {isPlayerReady ? "READY!" : "NOT READY"}
+                            </Label>
                           </div>
-                        )}
+                          <p className="text-center text-sm text-muted-foreground mt-2">
+                            {getActivePlayerCount() < 2 
+                              ? "Waiting for at least 2 players..." 
+                              : "Click the switch when ready!"}
+                          </p>
+                        </div>
                       </div>
                       <div>
                         <p className="text-sm font-medium">
@@ -976,8 +987,7 @@ export default function CowsAndBulls() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Avatar 
-                                      className={`${gameSession.current_player_index === index && gameSession.game_started ? 'ring-2 ring-primary animate-pulse' : ''} 
-                                        ${player.active === false ? 'opacity-40' : ''}`}
+                                      className={`${player.active === false ? 'opacity-40' : ''}`}
                                     >
                                       <AvatarFallback className={`${player.id === currentPlayerId ? 'bg-primary text-primary-foreground' : ''}`}>
                                         {player.name.substring(0, 2).toUpperCase()}
@@ -993,7 +1003,7 @@ export default function CowsAndBulls() {
                                         {player.ready ? "Ready ✓" : "Not Ready"}
                                       </p>
                                     )}
-                                    {gameSession.game_started && gameSession.current_player_index === index && (
+                                    {/* {gameSession.game_started && gameSession.current_player_index === index && (
                                       <p className="text-xs text-primary font-bold">Current Turn</p>
                                     )}
                                     {!gameSession.game_started && !player.ready && player.id !== currentPlayerId && (
@@ -1005,7 +1015,7 @@ export default function CowsAndBulls() {
                                       >
                                         Remove
                                       </Button>
-                                    )}
+                                    )} */}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1036,60 +1046,36 @@ export default function CowsAndBulls() {
                       </div>
                     </div>
                     
-                    {gameSession.game_started ? (
-                      isMyTurn() ? (
-                        <div className="space-y-4">
-                          <Alert variant="default" className="bg-primary/10 border-primary/20">
-                            <AlertDescription>
-                              <strong>It's your turn!</strong> Make your guess.
-                            </AlertDescription>
-                          </Alert>
-                          <Label htmlFor="current-guess">Your Guess ({gameSession.digit_length} digits, no repeats)</Label>
-                          <div className="flex space-x-2">
+                    {/* Simplified Game Input */}
+                    {gameSession.game_started && !gameSession.winner && (
+                      <div className="space-y-4 mt-8">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Label htmlFor="current-guess" className="text-xl font-bold">
+                            YOUR GUESS ({gameSession.digit_length} DIGITS)
+                          </Label>
+                          <div className="flex space-x-2 w-full max-w-md">
                             <Input 
                               id="current-guess" 
                               value={currentGuess} 
                               onChange={(e) => setCurrentGuess(e.target.value)} 
-                              placeholder={`Enter ${gameSession.digit_length} digits`}
+                              placeholder={`Enter ${gameSession.digit_length} unique digits`}
                               maxLength={gameSession.digit_length}
+                              className="text-center text-2xl h-16"
                             />
-                            <Button onClick={submitGuess}>Submit</Button>
-                          </div>
-                          {error && (
-                            <Alert variant="destructive">
-                              <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                          )}
-                          <div className="flex gap-4 text-sm mt-2">
-                            <div className="flex items-center">
-                              <span className="inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span> 
-                              <span>Bull (correct position)</span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="inline-block w-3 h-3 bg-blue-600 rounded-full mr-2"></span> 
-                              <span>Cow (wrong position)</span>
-                            </div>
+                            <Button 
+                              onClick={submitGuess} 
+                              className="h-16 px-8 text-lg"
+                              disabled={!!gameSession.winner}
+                            >
+                              SUBMIT
+                            </Button>
                           </div>
                         </div>
-                      ) : (
-                        <div className="bg-muted p-4 rounded-md">
-                          <p className="text-center">Waiting for <strong>{getCurrentPlayerName()}</strong> to make a guess...</p>
-                        </div>
-                      )
-                    ) : (
-                      <div className="bg-muted p-4 rounded-md">
-                        <p className="text-center">Waiting for all players to be ready before starting the game.</p>
-                        <div className="w-full bg-secondary h-2 rounded-full mt-4">
-                          <div 
-                            className="bg-primary h-2 rounded-full transition-all duration-500" 
-                            style={{ 
-                              width: `${gameSession.players.filter(p => p.ready).length / gameSession.players.length * 100}%` 
-                            }}
-                          ></div>
-                        </div>
-                        <div className="text-center text-sm mt-2">
-                          {gameSession.players.filter(p => p.ready).length} of {gameSession.players.length} players ready
-                        </div>
+                        {error && (
+                          <Alert variant="destructive" className="mx-auto max-w-md">
+                            <AlertDescription>{error}</AlertDescription>
+                          </Alert>
+                        )}
                       </div>
                     )}
                   </>
@@ -1100,7 +1086,7 @@ export default function CowsAndBulls() {
                   <h3 className="font-semibold mb-4">Game History:</h3>
                   <div className="space-y-4">
                     {gameSession.players.map((player) => (
-                      <div key={player.id} className={`border rounded-md p-4 ${gameSession.game_started && gameSession.current_player_index === gameSession.players.findIndex(p => p.id === player.id) ? 'border-primary bg-primary/5' : ''}`}>
+                      <div key={player.id} className={`border rounded-md p-4 ${gameSession.game_started ? 'border-primary bg-primary/5' : ''}`}>
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex items-center space-x-2">
                             <Avatar>
@@ -1114,10 +1100,7 @@ export default function CowsAndBulls() {
                               <span className="font-medium">
                                 {player.name} {player.id === currentPlayerId ? "(You)" : ""}
                               </span>
-                              {gameSession.game_started && gameSession.current_player_index === gameSession.players.findIndex(p => p.id === player.id) && !gameSession.winner && (
-                                <Badge className="ml-2 bg-primary">Current Turn</Badge>
-                              )}
-                              {gameSession.winner === player.id && (
+                              {gameSession.winner && Array.isArray(gameSession.winner) && gameSession.winner.some(w => w.playerId === player.id) && (
                                 <Badge className="ml-2 bg-green-500">Winner!</Badge>
                               )}
                             </div>
@@ -1134,21 +1117,11 @@ export default function CowsAndBulls() {
                                   {player.id === currentPlayerId ? (
                                     <span>
                                       Guess #{idx + 1}: <strong>
-                                        {Array.from(guess.guess).map((digit, digitIndex) => {
-                                          // Determine if this digit is a bull (right position)
-                                          const isBull = gameSession.secret_number[digitIndex] === digit;
-                                          // Determine if this digit is a cow (right digit, wrong position)
-                                          const isCow = !isBull && gameSession.secret_number.includes(digit);
-                                          
-                                          return (
-                                            <span 
-                                              key={digitIndex} 
-                                              className={`${isBull ? 'text-red-600 font-bold' : isCow ? 'text-blue-600 font-bold' : ''}`}
-                                            >
-                                              {digit}
-                                            </span>
-                                          );
-                                        })}
+                                        {Array.from(guess.guess).map((digit, digitIndex) => (
+                                          <span key={digitIndex}>
+                                            {digit}
+                                          </span>
+                                        ))}
                                       </strong>
                                     </span>
                                   ) : (

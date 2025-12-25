@@ -7,7 +7,7 @@ CREATE TABLE game_sessions (
   players JSONB NOT NULL,
   current_player_index INTEGER NOT NULL DEFAULT 0,
   digit_length INTEGER NOT NULL DEFAULT 4,
-  winner TEXT,
+  winner JSONB NOT NULL DEFAULT '[]',
   game_started BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
