@@ -15,11 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import confetti from 'canvas-confetti';
-import { supabase, Player, GameSession } from "@/lib/supabase";
+import { createClient, Player, GameSession } from "@/lib/supabase";
 
 export default function CowsAndBulls() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const supabase = createClient();
   const [playerName, setPlayerName] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [joiningSession, setJoiningSession] = useState(false);
