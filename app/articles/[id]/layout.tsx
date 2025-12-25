@@ -1,35 +1,38 @@
 import type { Metadata } from 'next';
-import { articles } from '@/data/articles/metadata';
+import { createClient } from '@/lib/supabase/server';
 
 // Generate metadata for each article dynamically
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const articleId = parseInt(params.id);
-  const article = articles.find(article => article.id === articleId);
+  const slug = params.id;
   
-  if (!article) {
+  const supabase = await createClient();
+
+  const { data: article, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .single();
+  
+  if (error || !article) {
     return {
       title: 'Article Not Found',
       description: 'The requested article could not be found.',
     };
   }
   
-  // Get the image filename without extension and path
-  const imageName = article.image ? 
-    article.image.split('/').pop()?.split('.')[0] : null;
-  
-  // Use optimized OG image if available, otherwise use the original image
-  const imagePath = imageName ? 
-    `https://akhilphilip.com/images/og/${imageName}-og.png` : 
+  // Use cover image or default OG image
+  const imagePath = article.cover_image || 
     'https://akhilphilip.com/images/og/blog-cover.png';
   
   return {
     title: `${article.title} | Akhil Philip`,
-    description: article.excerpt || `Article by Akhil Philip - ${article.title}`,
+    description: article.excerpt || article.seo_description || `Article by Akhil Philip - ${article.title}`,
     openGraph: {
-      title: article.title,
-      description: article.excerpt || `Article by Akhil Philip - ${article.title}`,
+      title: article.seo_title || article.title,
+      description: article.excerpt || article.seo_description || `Article by Akhil Philip - ${article.title}`,
       type: 'article',
-      publishedTime: article.date,
+      publishedTime: article.published_at || article.created_at,
       authors: ['Akhil Philip'],
       images: [
         {
@@ -42,8 +45,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.title,
-      description: article.excerpt || `Article by Akhil Philip - ${article.title}`,
+      title: article.seo_title || article.title,
+      description: article.excerpt || article.seo_description || `Article by Akhil Philip - ${article.title}`,
       images: [imagePath],
     }
   };

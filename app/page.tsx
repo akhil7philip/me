@@ -1,28 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Link from "next/link";
-import { categories, articles, Article, CategoryConfig } from "@/data/articles/metadata";
+import { createBrowserClient } from '@supabase/ssr';
 import { gameCategories, games, Game, GameCategoryConfig } from "@/data/mini-games/metadata";
 import { Button } from "@/components/ui/button";
+import { Star, TrendingUp, BookMarked, Newspaper } from "lucide-react";
 
-const allCategory = categories[0].name;
-const featuredCategory = categories[1].name;
+const allCategory = "All";
+const featuredCategory = "Featured";
 const allGamesCategory = gameCategories[0].name;
 const featuredGamesCategory = gameCategories[1].name;
+
+const categoryConfigs = [
+  { name: "All", icon: Newspaper },
+  { name: "Featured", icon: Star },
+  { name: "Technology", icon: TrendingUp },
+  { name: "Reflection", icon: BookMarked },
+];
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState(allCategory);
   const [activeGameCategory, setActiveGameCategory] = useState(allGamesCategory);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  useEffect(() => {
+    fetchArticles();
+    fetchCategories();
+  }, []);
+
+  async function fetchArticles() {
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*, categories(*)')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(9);
+
+      if (error) throw error;
+      setArticles(data || []);
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchCategories() {
+    const { data } = await supabase.from('categories').select('*').order('name');
+    if (data) setCategories(data);
+  }
 
   const filteredArticles = activeCategory === allCategory
     ? articles
     : activeCategory === featuredCategory
-      ? articles.filter((article: Article) => article.featured)
-      : articles.filter((article: Article) => article.category === activeCategory);
+      ? articles.filter((article: any) => article.featured)
+      : articles.filter((article: any) => article.categories?.name === activeCategory);
 
   const filteredGames = activeGameCategory === allGamesCategory
     ? games
@@ -102,7 +146,7 @@ export default function Home() {
           <Tabs defaultValue={allCategory} className="space-y-8">
             <ScrollArea className="w-full whitespace-nowrap">
               <TabsList className="inline-flex w-full justify-start space-x-4 p-0 bg-transparent">
-                {categories.map((category: CategoryConfig) => (
+                {categoryConfigs.map((category) => (
                   <TabsTrigger
                     key={category.name}
                     value={category.name}
@@ -117,35 +161,55 @@ export default function Home() {
               <ScrollBar orientation="horizontal" className="invisible" />
             </ScrollArea>
 
-            {categories.map((category: CategoryConfig) => (
+            {categoryConfigs.map((category) => (
               <TabsContent key={category.name} value={category.name} className="mt-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredArticles.map((article) => (
-                    <Link href={`/articles/${article.id}`} key={article.id}>
-                      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="aspect-video relative overflow-hidden">
-                          <img
-                            src={article.image}
-                            alt={article.title}
-                            className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                        <CardHeader>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-muted-foreground">{article.date}</span>
-                            <span className="text-sm text-muted-foreground">{article.readTime}</span>
-                          </div>
-                          <CardTitle className="line-clamp-2 hover:text-primary">
-                            {article.title}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="h-96 bg-secondary rounded-lg animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : filteredArticles.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No articles found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredArticles.map((article) => (
+                      <Link href={`/articles/${article.slug}`} key={article.id}>
+                        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                          {article.cover_image && (
+                            <div className="aspect-video relative overflow-hidden">
+                              <img
+                                src={article.cover_image}
+                                alt={article.title}
+                                className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                          )}
+                          <CardHeader>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(article.published_at || article.created_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                              <span className="text-sm text-muted-foreground">{article.read_time}</span>
+                            </div>
+                            <CardTitle className="line-clamp-2 hover:text-primary">
+                              {article.title}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>

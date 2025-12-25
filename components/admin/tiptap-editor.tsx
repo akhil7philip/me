@@ -243,6 +243,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
 export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
