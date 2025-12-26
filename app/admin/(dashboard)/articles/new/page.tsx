@@ -552,12 +552,14 @@ export default function NewArticlePage() {
                 <CardTitle>Series</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                <Select 
+                  value={selectedSeriesId || undefined} 
+                  onValueChange={(value) => setSelectedSeriesId(value || '')}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select series (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
                     {series.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}

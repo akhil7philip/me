@@ -27,6 +27,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { createBrowserClient } from '@supabase/ssr';
+import { FileText as FileTextIcon, Link2 } from 'lucide-react';
+import {
   Bold,
   Italic,
   Underline as UnderlineIcon,
@@ -51,6 +61,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useEffect, useState } from 'react';
 import { Footnote } from './footnote-extension';
+import { ArticleLink } from './article-link-extension';
 
 interface TiptapEditorProps {
   content: string;
@@ -62,6 +73,15 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   const [footnoteDialogOpen, setFootnoteDialogOpen] = useState(false);
   const [footnoteText, setFootnoteText] = useState('');
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [articleLinkDialogOpen, setArticleLinkDialogOpen] = useState(false);
+  const [articleSearchQuery, setArticleSearchQuery] = useState('');
+  const [articles, setArticles] = useState<any[]>([]);
+  const [articleLinkLoading, setArticleLinkLoading] = useState(false);
+  
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   if (!editor) return null;
 
@@ -84,6 +104,50 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
     }
+  }, [editor]);
+
+  const searchArticles = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setArticles([]);
+      return;
+    }
+    
+    setArticleLinkLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, slug, title, excerpt')
+        .or(`title.ilike.%${query}%,excerpt.ilike.%${query}%`)
+        .eq('status', 'published')
+        .limit(10);
+      
+      if (error) throw error;
+      setArticles(data || []);
+    } catch (error) {
+      console.error('Error searching articles:', error);
+      setArticles([]);
+    } finally {
+      setArticleLinkLoading(false);
+    }
+  }, [supabase]);
+
+  const addArticleLink = useCallback((slug: string, title: string) => {
+    const selectedText = editor.state.doc.textBetween(
+      editor.state.selection.from,
+      editor.state.selection.to
+    );
+    
+    if (selectedText) {
+      // Wrap selected text with article link
+      (editor.chain().focus() as any).setArticleLink({ slug }).run();
+    } else {
+      // Insert article title as link text
+      (editor.chain().focus() as any).setArticleLink({ slug, text: title }).run();
+    }
+    
+    setArticleLinkDialogOpen(false);
+    setArticleSearchQuery('');
+    setArticles([]);
   }, [editor]);
 
   const addImage = useCallback(() => {
@@ -118,7 +182,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
   const addFootnote = useCallback(() => {
     if (footnoteText.trim()) {
-      editor.chain().focus().setFootnote({ text: footnoteText.trim() }).run();
+      (editor.chain().focus() as any).setFootnote({ text: footnoteText.trim() }).run();
       setFootnoteText('');
       // Keep dialog open for adding more footnotes
     }
@@ -281,6 +345,15 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Button type="button" variant="ghost" size="sm" onClick={addLink}>
         <LinkIcon className="w-4 h-4" />
       </Button>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => setArticleLinkDialogOpen(true)}
+        className={editor.isActive('articleLink') ? 'bg-secondary' : ''}
+      >
+        <Link2 className="w-4 h-4" />
+      </Button>
       <Button type="button" variant="ghost" size="sm" onClick={addImage}>
         <ImageIcon className="w-4 h-4" />
       </Button>
@@ -378,6 +451,75 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Article Link Dialog */}
+      <Dialog open={articleLinkDialogOpen} onOpenChange={setArticleLinkDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Link to Article</DialogTitle>
+            <DialogDescription>
+              Search for an article to link to. Select text first to wrap it, or insert the article title.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Command className="rounded-lg border">
+              <CommandInput
+                placeholder="Search articles..."
+                value={articleSearchQuery}
+                onValueChange={(value) => {
+                  setArticleSearchQuery(value);
+                  searchArticles(value);
+                }}
+              />
+              <CommandList>
+                {articleLinkLoading && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Searching...
+                  </div>
+                )}
+                <CommandEmpty>
+                  {articleSearchQuery.length < 2
+                    ? 'Type at least 2 characters to search'
+                    : 'No articles found'}
+                </CommandEmpty>
+                <CommandGroup>
+                  {articles.map((article) => (
+                    <CommandItem
+                      key={article.id}
+                      value={article.slug}
+                      onSelect={() => addArticleLink(article.slug, article.title)}
+                      className="cursor-pointer"
+                    >
+                      <FileTextIcon className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{article.title}</span>
+                        {article.excerpt && (
+                          <span className="text-xs text-muted-foreground line-clamp-1">
+                            {article.excerpt}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setArticleLinkDialogOpen(false);
+                setArticleSearchQuery('');
+                setArticles([]);
+              }}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -437,6 +579,11 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
       Footnote.configure({
         HTMLAttributes: {
           class: 'footnote-reference',
+        },
+      }),
+      ArticleLink.configure({
+        HTMLAttributes: {
+          class: 'article-link',
         },
       }),
     ],

@@ -43,12 +43,14 @@ import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { Footnote } from '@/components/admin/footnote-extension';
+import { ArticleLink } from '@/components/admin/article-link-extension';
 import {
   FacebookShareButton,
   TwitterShareButton,
   LinkedinShareButton,
 } from 'react-share';
 import { ArticleMusicPlayer } from '@/components/article-music-player';
+import { ArticleContentRenderer } from '@/components/article-content-renderer';
 
 const lowlight = createLowlight(common);
 
@@ -384,6 +386,7 @@ export default function ArticlePage() {
     Typography,
     CodeBlockLowlight.configure({ lowlight }),
     Footnote,
+    ArticleLink,
   ]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -481,9 +484,9 @@ export default function ArticlePage() {
           <Separator />
 
           {/* Article Content */}
-          <div
+          <ArticleContentRenderer
+            htmlContent={htmlContent}
             className="prose prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-lg"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
 
           <Separator />

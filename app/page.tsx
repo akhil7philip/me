@@ -8,7 +8,8 @@ import Link from "next/link";
 import { createBrowserClient } from '@supabase/ssr';
 import { gameCategories, games, Game, GameCategoryConfig } from "@/data/mini-games/metadata";
 import { Button } from "@/components/ui/button";
-import { Star, TrendingUp, BookMarked, Newspaper } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Star, TrendingUp, BookMarked, Newspaper, BookOpen, ArrowRight, FileText } from "lucide-react";
 
 const allCategory = "All";
 const featuredCategory = "Featured";
@@ -27,7 +28,10 @@ export default function Home() {
   const [activeGameCategory, setActiveGameCategory] = useState(allGamesCategory);
   const [articles, setArticles] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [series, setSeries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'articles' | 'series'>('articles');
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,6 +42,12 @@ export default function Home() {
     fetchArticles();
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (viewMode === 'series') {
+      fetchSeries();
+    }
+  }, [viewMode]);
 
   async function fetchArticles() {
     try {
@@ -60,6 +70,52 @@ export default function Home() {
   async function fetchCategories() {
     const { data } = await supabase.from('categories').select('*').order('name');
     if (data) setCategories(data);
+  }
+
+  async function fetchSeries() {
+    setSeriesLoading(true);
+    try {
+      const { data: seriesData, error: seriesError } = await supabase
+        .from('series')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (seriesError) throw seriesError;
+
+      // Fetch articles for each series
+      const seriesWithArticles = await Promise.all(
+        (seriesData || []).map(async (s) => {
+          const { data: articlesData, error: articlesError } = await supabase
+            .from('article_series')
+            .select('position, articles(id, slug, title, excerpt, cover_image, published_at, status)')
+            .eq('series_id', s.id)
+            .order('position', { ascending: true });
+
+          if (articlesError) throw articlesError;
+
+          // Filter only published articles
+          const publishedArticles = (articlesData || [])
+            .filter((item: any) => item.articles && item.articles.status === 'published')
+            .map((item: any) => ({
+              ...item.articles,
+              position: item.position,
+            }));
+
+          return {
+            ...s,
+            articles: publishedArticles,
+            articleCount: publishedArticles.length,
+          };
+        })
+      );
+
+      // Filter out series with no published articles
+      setSeries(seriesWithArticles.filter(s => s.articleCount > 0));
+    } catch (error) {
+      console.error('Error fetching series:', error);
+    } finally {
+      setSeriesLoading(false);
+    }
   }
 
   const filteredArticles = activeCategory === allCategory
@@ -134,85 +190,189 @@ export default function Home() {
         <section>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold">Blog</h2>
-            <Link href="/articles">
-              <Button variant="ghost" className="group">
-                <span className="mr-1">View All</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 group-hover:translate-x-1 transition-transform">
-                  <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-                </svg>
-              </Button>
-            </Link>
+            <div className="flex items-center gap-4">
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-2 border rounded-lg p-1 bg-muted/50">
+                <Button
+                  variant={viewMode === 'articles' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('articles')}
+                  className="gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Articles
+                </Button>
+                <Button
+                  variant={viewMode === 'series' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('series')}
+                  className="gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Series
+                </Button>
+              </div>
+              <Link href={viewMode === 'articles' ? "/articles" : "/series"}>
+                <Button variant="ghost" className="group">
+                  <span className="mr-1">View All</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 group-hover:translate-x-1 transition-transform">
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </Button>
+              </Link>
+            </div>
           </div>
-          <Tabs defaultValue={allCategory} className="space-y-8">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="inline-flex w-full justify-start space-x-4 p-0 bg-transparent">
-                {categoryConfigs.map((category) => (
-                  <TabsTrigger
-                    key={category.name}
-                    value={category.name}
-                    onClick={() => setActiveCategory(category.name)}
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2 rounded-full"
-                  >
-                    {category.icon && <category.icon className="w-4 h-4 mr-2" />}
-                    {category.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <ScrollBar orientation="horizontal" className="invisible" />
-            </ScrollArea>
+          {viewMode === 'articles' ? (
+            <Tabs defaultValue={allCategory} className="space-y-8">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <TabsList className="inline-flex w-full justify-start space-x-4 p-0 bg-transparent">
+                  {categoryConfigs.map((category) => (
+                    <TabsTrigger
+                      key={category.name}
+                      value={category.name}
+                      onClick={() => setActiveCategory(category.name)}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2 rounded-full"
+                    >
+                      {category.icon && <category.icon className="w-4 h-4 mr-2" />}
+                      {category.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <ScrollBar orientation="horizontal" className="invisible" />
+              </ScrollArea>
 
-            {categoryConfigs.map((category) => (
-              <TabsContent key={category.name} value={category.name} className="mt-8">
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="h-96 bg-secondary rounded-lg animate-pulse"></div>
-                    ))}
-                  </div>
-                ) : filteredArticles.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">No articles found</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredArticles.map((article) => (
-                      <Link href={`/articles/${article.slug}`} key={article.id}>
-                        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                          {article.cover_image && (
-                            <div className="aspect-video relative overflow-hidden">
-                              <img
-                                src={article.cover_image}
-                                alt={article.title}
-                                className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
-                              />
+              {categoryConfigs.map((category) => (
+                <TabsContent key={category.name} value={category.name} className="mt-8">
+                  {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="h-96 bg-secondary rounded-lg animate-pulse"></div>
+                      ))}
+                    </div>
+                  ) : filteredArticles.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">No articles found</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredArticles.map((article) => (
+                        <Link href={`/articles/${article.slug}`} key={article.id}>
+                          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                            {article.cover_image && (
+                              <div className="aspect-video relative overflow-hidden">
+                                <img
+                                  src={article.cover_image}
+                                  alt={article.title}
+                                  className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                            )}
+                            <CardHeader>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-muted-foreground">
+                                  {new Date(article.published_at || article.created_at).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                </span>
+                                <span className="text-sm text-muted-foreground">{article.read_time}</span>
+                              </div>
+                              <CardTitle className="line-clamp-2 hover:text-primary">
+                                {article.title}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          ) : (
+            <div className="space-y-8">
+              {seriesLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-96 bg-secondary rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : series.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground text-lg">No series available yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {series.map((s) => (
+                    <Link href={`/series/${s.slug}`} key={s.id}>
+                      <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                        {s.cover_image && (
+                          <div className="aspect-video relative overflow-hidden">
+                            <img
+                              src={s.cover_image}
+                              alt={s.name}
+                              className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+                        <CardHeader>
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge variant="secondary">
+                              {s.articleCount} {s.articleCount === 1 ? 'Article' : 'Articles'}
+                            </Badge>
+                          </div>
+                          <CardTitle className="line-clamp-2 hover:text-primary">
+                            {s.name}
+                          </CardTitle>
+                          {s.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-3 mt-2">
+                              {s.description}
+                            </p>
+                          )}
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col">
+                          {s.articles && s.articles.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              <p className="text-sm font-medium text-muted-foreground">Articles in this series:</p>
+                              <div className="space-y-1">
+                                {s.articles.slice(0, 5).map((article: any) => (
+                                  <div
+                                    key={article.id}
+                                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                                  >
+                                    <Badge variant="outline" className="text-xs">
+                                      {article.position}
+                                    </Badge>
+                                    <span className="line-clamp-1">{article.title}</span>
+                                  </div>
+                                ))}
+                                {s.articles.length > 5 && (
+                                  <p className="text-xs text-muted-foreground pl-8">
+                                    +{s.articles.length - 5} more
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           )}
-                          <CardHeader>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(article.published_at || article.created_at).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </span>
-                              <span className="text-sm text-muted-foreground">{article.read_time}</span>
-                            </div>
-                            <CardTitle className="line-clamp-2 hover:text-primary">
-                              {article.title}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
+                          <div className="mt-auto pt-4">
+                            <Button variant="outline" className="w-full">
+                              View Series
+                              <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Mini-Games Section */}
