@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
@@ -21,9 +21,23 @@ import { TiptapEditor } from '@/components/admin/tiptap-editor';
 import { useAuth } from '@/lib/auth-context';
 import slugify from 'slugify';
 import readingTime from 'reading-time';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Category, Tag } from '@/lib/supabase';
+
+interface ArticleState {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  coverImage: string;
+  categoryId: string;
+  selectedTags: string[];
+  status: 'draft' | 'published';
+  featured: boolean;
+  seoTitle: string;
+  seoDescription: string;
+}
 
 export default function EditArticlePage() {
   const params = useParams();
@@ -42,12 +56,36 @@ export default function EditArticlePage() {
   const [seoDescription, setSeoDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialState, setInitialState] = useState<ArticleState | null>(null);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false);
+  
+  // Refs to store latest values for auto-save
+  const stateRef = useRef({
+    title,
+    slug,
+    content,
+    excerpt,
+    coverImage,
+    categoryId,
+    selectedTags,
+    status,
+    featured,
+    seoTitle,
+    seoDescription,
+  });
+  
+  const initialStateRef = useRef(initialState);
 
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -84,6 +122,26 @@ export default function EditArticlePage() {
         setSeoTitle(article.seo_title || '');
         setSeoDescription(article.seo_description || '');
         setSelectedTags(article.article_tags?.map((at: any) => at.tag_id) || []);
+        
+        // Set initial state for change detection
+        setInitialState({
+          title: article.title,
+          slug: article.slug,
+          content: article.content,
+          excerpt: article.excerpt || '',
+          coverImage: article.cover_image || '',
+          categoryId: article.category_id || '',
+          selectedTags: article.article_tags?.map((at: any) => at.tag_id) || [],
+          status: article.status,
+          featured: article.featured,
+          seoTitle: article.seo_title || '',
+          seoDescription: article.seo_description || '',
+        });
+        
+        // Set last saved timestamp from updated_at if available
+        if (article.updated_at) {
+          setLastSaved(new Date(article.updated_at));
+        }
       }
     } catch (error) {
       console.error('Error fetching article:', error);
@@ -107,33 +165,96 @@ export default function EditArticlePage() {
     if (data) setTags(data);
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  // Update state refs whenever state changes
+  useEffect(() => {
+    stateRef.current = {
+      title,
+      slug,
+      content,
+      excerpt,
+      coverImage,
+      categoryId,
+      selectedTags,
+      status,
+      featured,
+      seoTitle,
+      seoDescription,
+    };
+  }, [title, slug, content, excerpt, coverImage, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
+  
+  useEffect(() => {
+    initialStateRef.current = initialState;
+  }, [initialState]);
 
-    setLoading(true);
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = (): boolean => {
+    const currentState = stateRef.current;
+    const initial = initialStateRef.current;
+    
+    if (!initial) return false;
+    
+    return (
+      currentState.title !== initial.title ||
+      currentState.slug !== initial.slug ||
+      currentState.content !== initial.content ||
+      currentState.excerpt !== initial.excerpt ||
+      currentState.coverImage !== initial.coverImage ||
+      currentState.categoryId !== initial.categoryId ||
+      JSON.stringify(currentState.selectedTags.sort()) !== JSON.stringify(initial.selectedTags.sort()) ||
+      currentState.status !== initial.status ||
+      currentState.featured !== initial.featured ||
+      currentState.seoTitle !== initial.seoTitle ||
+      currentState.seoDescription !== initial.seoDescription
+    );
+  };
+
+  // Save article function (reusable for auto-save and manual save)
+  const saveArticle = async (isAutoSave: boolean = false): Promise<boolean> => {
+    if (!user || !articleId || isSavingRef.current) return false;
+    
+    // Get current state from refs for auto-save, or use state directly for manual save
+    const currentState = isAutoSave ? stateRef.current : {
+      title,
+      slug,
+      content,
+      excerpt,
+      coverImage,
+      categoryId,
+      selectedTags,
+      status,
+      featured,
+      seoTitle,
+      seoDescription,
+    };
+    
+    isSavingRef.current = true;
+    if (!isAutoSave) {
+      setLoading(true);
+    } else {
+      setIsSaving(true);
+    }
 
     try {
       // Calculate reading time
-      const stats = readingTime(JSON.stringify(content));
+      const stats = readingTime(JSON.stringify(currentState.content));
       const readTime = stats.text;
 
       // Update article
       const { error: articleError } = await supabase
         .from('articles')
         .update({
-          title,
-          slug,
-          content,
-          excerpt,
-          cover_image: coverImage || null,
-          category_id: categoryId || null,
-          status,
-          published_at: status === 'published' ? new Date().toISOString() : null,
-          featured,
+          title: currentState.title,
+          slug: currentState.slug,
+          content: currentState.content,
+          excerpt: currentState.excerpt,
+          cover_image: currentState.coverImage || null,
+          category_id: currentState.categoryId || null,
+          status: currentState.status,
+          published_at: currentState.status === 'published' && !isAutoSave ? new Date().toISOString() : undefined,
+          featured: currentState.featured,
           read_time: readTime,
-          seo_title: seoTitle || null,
-          seo_description: seoDescription || null,
+          seo_title: currentState.seoTitle || null,
+          seo_description: currentState.seoDescription || null,
         })
         .eq('id', articleId);
 
@@ -142,8 +263,8 @@ export default function EditArticlePage() {
       // Update article tags
       await supabase.from('article_tags').delete().eq('article_id', articleId);
 
-      if (selectedTags.length > 0) {
-        const articleTags = selectedTags.map((tagId) => ({
+      if (currentState.selectedTags.length > 0) {
+        const articleTags = currentState.selectedTags.map((tagId) => ({
           article_id: articleId,
           tag_id: tagId,
         }));
@@ -155,40 +276,161 @@ export default function EditArticlePage() {
         if (tagsError) throw tagsError;
       }
 
-      // Save version history
-      const { error: versionError } = await supabase.from('article_versions').insert({
-        article_id: articleId,
-        title,
-        content,
-        excerpt,
-        version_number: Date.now(), // Simple versioning
-        created_by: user.id,
-      });
+      // Save version history (only for manual saves, not auto-saves)
+      if (!isAutoSave) {
+        const { error: versionError } = await supabase.from('article_versions').insert({
+          article_id: articleId,
+          title: currentState.title,
+          content: currentState.content,
+          excerpt: currentState.excerpt,
+          version_number: Date.now(),
+          created_by: user.id,
+        });
 
-      if (versionError) console.warn('Failed to save version:', versionError);
+        if (versionError) console.warn('Failed to save version:', versionError);
+      }
 
-      toast({
-        title: 'Success',
-        description: 'Article updated successfully',
-      });
+      // Update initial state to reflect saved state
+      const newInitialState = {
+        title: currentState.title,
+        slug: currentState.slug,
+        content: currentState.content,
+        excerpt: currentState.excerpt,
+        coverImage: currentState.coverImage,
+        categoryId: currentState.categoryId,
+        selectedTags: [...currentState.selectedTags],
+        status: currentState.status,
+        featured: currentState.featured,
+        seoTitle: currentState.seoTitle,
+        seoDescription: currentState.seoDescription,
+      };
+      
+      setInitialState(newInitialState);
+      initialStateRef.current = newInitialState;
 
-      router.push('/admin/articles');
+      const savedTime = new Date();
+      setLastSaved(savedTime);
+
+      if (!isAutoSave) {
+        toast({
+          title: 'Success',
+          description: 'Article updated successfully',
+        });
+      }
+
+      return true;
     } catch (error: any) {
-      console.error('Error updating article:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update article',
-        variant: 'destructive',
-      });
+      console.error('Error saving article:', error);
+      if (!isAutoSave) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to save article',
+          variant: 'destructive',
+        });
+      }
+      return false;
     } finally {
-      setLoading(false);
+      isSavingRef.current = false;
+      if (!isAutoSave) {
+        setLoading(false);
+      } else {
+        setIsSaving(false);
+      }
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const success = await saveArticle(false);
+    if (success) {
+      router.push('/admin/articles');
+    }
+  };
+
+  // Auto-save effect - set up interval once when article is loaded
+  useEffect(() => {
+    if (!initialState || !articleId) return;
+
+    // Clear any existing interval
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
+    // Set up auto-save interval
+    autoSaveIntervalRef.current = setInterval(() => {
+      if (hasUnsavedChanges() && !isSavingRef.current) {
+        saveArticle(true);
+      }
+    }, 5000); // Auto-save every 5 seconds
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [initialState, articleId]); // Only recreate when article is loaded or changed
 
   const toggleTag = (tagId: string) => {
     setSelectedTags((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      setCoverImage(publicUrl);
+
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully',
+      });
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to upload image',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   if (initialLoading) {
@@ -329,7 +571,32 @@ export default function EditArticlePage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                {/* Save Status */}
+                <div className="pt-2 border-t">
+                  {isSaving && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                      Auto-saving...
+                    </p>
+                  )}
+                  {!isSaving && lastSaved && !hasUnsavedChanges() && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3 text-green-500" />
+                      <span>Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </p>
+                  )}
+                  {!isSaving && hasUnsavedChanges() && (
+                    <p className="text-sm text-orange-500">
+                      Unsaved changes
+                    </p>
+                  )}
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || isSaving || !hasUnsavedChanges()}
+                >
                   {loading ? (
                     'Saving...'
                   ) : (
@@ -346,12 +613,37 @@ export default function EditArticlePage() {
               <CardHeader>
                 <CardTitle>Cover Image</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Input
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  placeholder="Image URL or upload"
-                />
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    placeholder="Image URL or upload"
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    {uploadingImage ? (
+                      'Uploading...'
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload
+                      </>
+                    )}
+                  </Button>
+                </div>
                 {coverImage && (
                   <img
                     src={coverImage}

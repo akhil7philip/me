@@ -38,9 +38,7 @@ import {
   AlignRight,
   AlignJustify,
 } from 'lucide-react';
-import { useCallback } from 'react';
-
-const lowlight = createLowlight(common);
+import { useCallback, useMemo, useEffect } from 'react';
 
 interface TiptapEditorProps {
   content: string;
@@ -73,6 +71,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     <div className="border-b p-2 flex flex-wrap gap-1 bg-secondary/50">
       {/* Text Formatting */}
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -81,6 +80,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Bold className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -89,6 +89,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Italic className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleUnderline().run()}
@@ -97,6 +98,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <UnderlineIcon className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -105,6 +107,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Strikethrough className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleCode().run()}
@@ -117,6 +120,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       {/* Headings */}
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -125,6 +129,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Heading1 className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -133,6 +138,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Heading2 className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -145,6 +151,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       {/* Lists */}
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -153,6 +160,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <List className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -161,6 +169,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <ListOrdered className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -173,6 +182,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       {/* Alignment */}
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
@@ -181,6 +191,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <AlignLeft className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
@@ -189,6 +200,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <AlignCenter className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
@@ -197,6 +209,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <AlignRight className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().setTextAlign('justify').run()}
@@ -208,13 +221,13 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Separator orientation="vertical" className="h-8" />
 
       {/* Insert */}
-      <Button variant="ghost" size="sm" onClick={addLink}>
+      <Button type="button" variant="ghost" size="sm" onClick={addLink}>
         <LinkIcon className="w-4 h-4" />
       </Button>
-      <Button variant="ghost" size="sm" onClick={addImage}>
+      <Button type="button" variant="ghost" size="sm" onClick={addImage}>
         <ImageIcon className="w-4 h-4" />
       </Button>
-      <Button variant="ghost" size="sm" onClick={addTable}>
+      <Button type="button" variant="ghost" size="sm" onClick={addTable}>
         <TableIcon className="w-4 h-4" />
       </Button>
 
@@ -222,6 +235,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       {/* Undo/Redo */}
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().undo().run()}
@@ -230,6 +244,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <Undo className="w-4 h-4" />
       </Button>
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => editor.chain().focus().redo().run()}
@@ -242,6 +257,17 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 };
 
 export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
+  // Create lowlight instance safely - this is a client component so window is available
+  const lowlight = useMemo(() => {
+    try {
+      return createLowlight(common);
+    } catch (error) {
+      console.error('Failed to initialize lowlight:', error);
+      // Return a minimal lowlight instance as fallback
+      return createLowlight();
+    }
+  }, []);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -275,6 +301,12 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
       Typography,
       CodeBlockLowlight.configure({
         lowlight,
+        defaultLanguage: null,
+        HTMLAttributes: {
+          class: 'rounded-md bg-muted p-4 font-mono text-sm',
+        },
+        exitOnTripleEnter: true,
+        exitOnArrowDown: true,
       }),
     ],
     content,
@@ -287,6 +319,30 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
       },
     },
   });
+
+  // Add error handler for uncaught errors from code blocks
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.message?.includes('ReadableStream') || event.message?.includes('code block')) {
+        console.error('Code block error caught:', event.error);
+        event.preventDefault();
+        // Optionally show a user-friendly message
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => {
+      window.removeEventListener('error', handleError);
+    };
+  }, []);
+
+  if (!editor) {
+    return (
+      <div className="border rounded-lg overflow-hidden bg-background p-4">
+        <div className="animate-pulse">Loading editor...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="border rounded-lg overflow-hidden bg-background">

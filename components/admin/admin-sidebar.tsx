@@ -23,7 +23,6 @@ import {
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
-  { href: '/admin/articles/new', label: 'New Article', icon: BookOpen },
   { href: '/admin/tags', label: 'Tags', icon: Tags },
   { href: '/admin/categories', label: 'Categories', icon: FolderTree },
   { href: '/admin/series', label: 'Series', icon: BookOpen },
