@@ -327,7 +327,14 @@ export function ArticleMusicPlayer({
               )}
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Music className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{creditsText}{playlistInfo}</span>
+                <a
+                  href={musicUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate hover:text-foreground transition-colors underline-offset-2 hover:underline"
+                >
+                  {creditsText}{playlistInfo}
+                </a>
               </div>
             </div>
           </div>

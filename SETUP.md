@@ -24,16 +24,48 @@ This guide will help you set up your full-featured blog CMS powered by Next.js a
 
 ### 1.3 Setup Storage Bucket
 
+**Option 1: Automated Setup (Recommended)**
+```bash
+npx tsx scripts/setup-storage.ts
+```
+This will create the bucket automatically. Then run the SQL policies shown in the output.
+
+**Option 2: Manual Setup**
+
 1. Go to Storage in your Supabase dashboard
 2. Create a new bucket called `media`
 3. Make it public
-4. Set up policies:
+4. Set up policies in the SQL Editor:
    ```sql
+   -- Drop existing policies if they exist (safe to run multiple times)
+   DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+   DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
+   DROP POLICY IF EXISTS "Authenticated users can update" ON storage.objects;
+   DROP POLICY IF EXISTS "Authenticated users can delete" ON storage.objects;
+   
    -- Allow public read access
-   CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'media');
+   CREATE POLICY "Public Access" 
+   ON storage.objects 
+   FOR SELECT 
+   USING (bucket_id = 'media');
    
    -- Allow authenticated users to upload
-   CREATE POLICY "Authenticated users can upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
+   CREATE POLICY "Authenticated users can upload" 
+   ON storage.objects 
+   FOR INSERT 
+   WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
+   
+   -- Allow authenticated users to update their own files
+   CREATE POLICY "Authenticated users can update" 
+   ON storage.objects 
+   FOR UPDATE 
+   USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+   
+   -- Allow authenticated users to delete their own files
+   CREATE POLICY "Authenticated users can delete" 
+   ON storage.objects 
+   FOR DELETE 
+   USING (bucket_id = 'media' AND auth.role() = 'authenticated');
    ```
 
 ### 1.4 Create Admin User
