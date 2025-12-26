@@ -109,7 +109,7 @@ export const ArticleLink = Mark.create<ArticleLinkOptions>({
           }
           
           if (text) {
-            // Insert text first, then select it and apply the mark
+            // Insert text first, then apply the mark
             // This is more reliable than insertContent with marks
             const { from } = state.selection;
             const to = from + text.length;
@@ -117,10 +117,7 @@ export const ArticleLink = Mark.create<ArticleLinkOptions>({
             // Insert the text
             tr.insertText(text, from);
             
-            // Set selection to the inserted text
-            tr.setSelection(state.tr.doc.resolve(from).createRange(state.tr.doc.resolve(to)));
-            
-            // Apply the mark with attributes
+            // Apply the mark with attributes to the inserted text
             const markType = this.type;
             const mark = markType.create({ slug });
             tr.addMark(from, to, mark);

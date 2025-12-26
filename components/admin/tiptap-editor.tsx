@@ -71,7 +71,7 @@ function truncateUrl(url: string, startLength: number = 30, endLength: number = 
 
 // Custom Link extension with hover tooltip
 const LinkWithTooltip = Link.extend({
-  renderHTML({ HTMLAttributes, mark }) {
+  renderHTML({ HTMLAttributes, mark }: { HTMLAttributes: Record<string, any>; mark?: any }) {
     // For Link marks, href can be in mark.attrs or HTMLAttributes
     const href = mark?.attrs?.href || HTMLAttributes?.href || HTMLAttributes.href;
     

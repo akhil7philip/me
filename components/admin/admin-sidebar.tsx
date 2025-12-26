@@ -30,6 +30,8 @@ import {
 import { createBrowserClient } from '@supabase/ssr';
 import { Article } from '@/lib/supabase';
 
+type ArticleListItem = Pick<Article, 'id' | 'title' | 'status' | 'created_at'>;
+
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
@@ -48,7 +50,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const { signOut } = useAuth();
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<ArticleListItem[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
   const [articlesOpen, setArticlesOpen] = useState(true);
   const currentArticleId = params?.id as string | undefined;
