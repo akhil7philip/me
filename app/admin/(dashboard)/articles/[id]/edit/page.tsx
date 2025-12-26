@@ -24,6 +24,31 @@ import readingTime from 'reading-time';
 import { ArrowLeft, Save, Eye, Upload, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Category, Tag } from '@/lib/supabase';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { generateHTML } from '@tiptap/html';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import LinkExt from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import TextAlign from '@tiptap/extension-text-align';
+import Typography from '@tiptap/extension-typography';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
+import { Footnote } from '@/components/admin/footnote-extension';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Calendar, Clock } from 'lucide-react';
+
+const lowlight = createLowlight(common);
 
 interface ArticleState {
   title: string;
@@ -31,6 +56,7 @@ interface ArticleState {
   content: string;
   excerpt: string;
   coverImage: string;
+  musicUrl: string;
   categoryId: string;
   selectedTags: string[];
   status: 'draft' | 'published';
@@ -48,6 +74,7 @@ export default function EditArticlePage() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -62,6 +89,7 @@ export default function EditArticlePage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [initialState, setInitialState] = useState<ArticleState | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isSavingRef = useRef(false);
   
@@ -72,6 +100,7 @@ export default function EditArticlePage() {
     content,
     excerpt,
     coverImage,
+    musicUrl,
     categoryId,
     selectedTags,
     status,
@@ -116,6 +145,7 @@ export default function EditArticlePage() {
         setContent(article.content);
         setExcerpt(article.excerpt || '');
         setCoverImage(article.cover_image || '');
+        setMusicUrl(article.music_url || '');
         setCategoryId(article.category_id || '');
         setStatus(article.status);
         setFeatured(article.featured);
@@ -130,6 +160,7 @@ export default function EditArticlePage() {
           content: article.content,
           excerpt: article.excerpt || '',
           coverImage: article.cover_image || '',
+          musicUrl: article.music_url || '',
           categoryId: article.category_id || '',
           selectedTags: article.article_tags?.map((at: any) => at.tag_id) || [],
           status: article.status,
@@ -173,6 +204,7 @@ export default function EditArticlePage() {
       content,
       excerpt,
       coverImage,
+      musicUrl,
       categoryId,
       selectedTags,
       status,
@@ -180,7 +212,7 @@ export default function EditArticlePage() {
       seoTitle,
       seoDescription,
     };
-  }, [title, slug, content, excerpt, coverImage, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
+  }, [title, slug, content, excerpt, coverImage, musicUrl, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
   
   useEffect(() => {
     initialStateRef.current = initialState;
@@ -199,6 +231,7 @@ export default function EditArticlePage() {
       currentState.content !== initial.content ||
       currentState.excerpt !== initial.excerpt ||
       currentState.coverImage !== initial.coverImage ||
+      currentState.musicUrl !== initial.musicUrl ||
       currentState.categoryId !== initial.categoryId ||
       JSON.stringify(currentState.selectedTags.sort()) !== JSON.stringify(initial.selectedTags.sort()) ||
       currentState.status !== initial.status ||
@@ -219,6 +252,7 @@ export default function EditArticlePage() {
       content,
       excerpt,
       coverImage,
+      musicUrl,
       categoryId,
       selectedTags,
       status,
@@ -248,6 +282,7 @@ export default function EditArticlePage() {
           content: currentState.content,
           excerpt: currentState.excerpt,
           cover_image: currentState.coverImage || null,
+          music_url: currentState.musicUrl || null,
           category_id: currentState.categoryId || null,
           status: currentState.status,
           published_at: currentState.status === 'published' && !isAutoSave ? new Date().toISOString() : undefined,
@@ -297,6 +332,7 @@ export default function EditArticlePage() {
         content: currentState.content,
         excerpt: currentState.excerpt,
         coverImage: currentState.coverImage,
+        musicUrl: currentState.musicUrl,
         categoryId: currentState.categoryId,
         selectedTags: [...currentState.selectedTags],
         status: currentState.status,
@@ -593,6 +629,15 @@ export default function EditArticlePage() {
                 </div>
 
                 <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full mb-2" 
+                  onClick={() => setPreviewOpen(true)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview
+                </Button>
+                <Button 
                   type="submit" 
                   className="w-full" 
                   disabled={loading || isSaving || !hasUnsavedChanges()}
@@ -656,6 +701,27 @@ export default function EditArticlePage() {
 
             <Card>
               <CardHeader>
+                <CardTitle>Background Music</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="musicUrl">Music URL</Label>
+                  <Input
+                    id="musicUrl"
+                    value={musicUrl}
+                    onChange={(e) => setMusicUrl(e.target.value)}
+                    placeholder="https://example.com/music.mp3"
+                    type="url"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. If provided, music will auto-play when the article is viewed. Users can toggle it off.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Category</CardTitle>
               </CardHeader>
               <CardContent>
@@ -697,6 +763,112 @@ export default function EditArticlePage() {
           </div>
         </div>
       </form>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Article Preview</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {coverImage && (
+              <img
+                src={coverImage}
+                alt={title}
+                className="w-full h-96 object-cover rounded-lg"
+              />
+            )}
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {featured && <Badge>Featured</Badge>}
+                {categoryId && categories.find(c => c.id === categoryId) && (
+                  <Badge variant="outline">
+                    {categories.find(c => c.id === categoryId)?.name}
+                  </Badge>
+                )}
+                {selectedTags.map((tagId) => {
+                  const tag = tags.find(t => t.id === tagId);
+                  return tag ? (
+                    <Badge
+                      key={tagId}
+                      variant="secondary"
+                      style={{ backgroundColor: tag.color ? tag.color + '20' : undefined }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-bold">{title || 'Untitled Article'}</h1>
+
+              {excerpt && (
+                <p className="text-xl text-muted-foreground">{excerpt}</p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+                {content && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {readingTime(
+                      typeof content === 'string' ? content : JSON.stringify(content)
+                    ).text}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Article Content */}
+            {content && (() => {
+              try {
+                // Handle both string and object content
+                const contentToRender = typeof content === 'string' ? JSON.parse(content) : content;
+                return (
+                  <div
+                    className="prose prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-lg"
+                    dangerouslySetInnerHTML={{
+                      __html: generateHTML(contentToRender, [
+                        StarterKit.configure({ codeBlock: false }),
+                        Underline,
+                        LinkExt,
+                        Image,
+                        Table,
+                        TableRow,
+                        TableHeader,
+                        TableCell,
+                        TextAlign,
+                        Typography,
+                        CodeBlockLowlight.configure({ lowlight }),
+                        Footnote,
+                      ]),
+                    }}
+                  />
+                );
+              } catch (error) {
+                return (
+                  <p className="text-muted-foreground italic">
+                    Error rendering preview. Please check your content format.
+                  </p>
+                );
+              }
+            })()}
+            {!content && (
+              <p className="text-muted-foreground italic">No content yet. Start writing to see the preview.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

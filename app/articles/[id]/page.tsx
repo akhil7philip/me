@@ -42,11 +42,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
+import { Footnote } from '@/components/admin/footnote-extension';
 import {
   FacebookShareButton,
   TwitterShareButton,
   LinkedinShareButton,
 } from 'react-share';
+import { ArticleMusicPlayer } from '@/components/article-music-player';
 
 const lowlight = createLowlight(common);
 
@@ -347,6 +349,7 @@ export default function ArticlePage() {
     TextAlign,
     Typography,
     CodeBlockLowlight.configure({ lowlight }),
+    Footnote,
   ]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -361,7 +364,10 @@ export default function ArticlePage() {
         />
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Music Player */}
+      <ArticleMusicPlayer musicUrl={article.music_url} />
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl" style={{ paddingTop: article.music_url ? '3.5rem' : '0' }}>
         {/* Header */}
         <div className="mb-8">
           <Link href="/articles">

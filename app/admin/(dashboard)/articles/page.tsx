@@ -27,11 +27,38 @@ import {
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Archive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Article } from '@/lib/supabase';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { generateHTML } from '@tiptap/html';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import LinkExt from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import { Table as TiptapTable } from '@tiptap/extension-table';
+import { TableRow as TiptapTableRow } from '@tiptap/extension-table-row';
+import { TableCell as TiptapTableCell } from '@tiptap/extension-table-cell';
+import { TableHeader as TiptapTableHeader } from '@tiptap/extension-table-header';
+import TextAlign from '@tiptap/extension-text-align';
+import Typography from '@tiptap/extension-typography';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
+import { Footnote } from '@/components/admin/footnote-extension';
+import { Calendar, Clock } from 'lucide-react';
+
+const lowlight = createLowlight(common);
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<any>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -123,6 +150,30 @@ export default function ArticlesPage() {
   const filteredArticles = articles.filter((article) =>
     article.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  async function fetchArticleForPreview(articleId: string) {
+    setPreviewLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*, categories(*), article_tags(tags(*))')
+        .eq('id', articleId)
+        .single();
+
+      if (error) throw error;
+      setPreviewArticle(data);
+      setPreviewOpen(true);
+    } catch (error) {
+      console.error('Error fetching article:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load article preview',
+        variant: 'destructive',
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
@@ -228,11 +279,9 @@ export default function ArticlesPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href={`/articles/${article.slug}`}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </Link>
+                          <DropdownMenuItem onClick={() => fetchArticleForPreview(article.id)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/admin/articles/${article.id}/edit`}>
@@ -262,6 +311,125 @@ export default function ArticlesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Article Preview</DialogTitle>
+          </DialogHeader>
+          {previewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : previewArticle ? (
+            <div className="space-y-6">
+              {previewArticle.cover_image && (
+                <img
+                  src={previewArticle.cover_image}
+                  alt={previewArticle.title}
+                  className="w-full h-96 object-cover rounded-lg"
+                />
+              )}
+
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {previewArticle.featured && <Badge>Featured</Badge>}
+                  {previewArticle.categories && (
+                    <Badge variant="outline">{previewArticle.categories.name}</Badge>
+                  )}
+                  {previewArticle.article_tags?.map((at: any) =>
+                    at.tags ? (
+                      <Badge
+                        key={at.tags.id}
+                        variant="secondary"
+                        style={{ backgroundColor: at.tags.color ? at.tags.color + '20' : undefined }}
+                      >
+                        {at.tags.name}
+                      </Badge>
+                    ) : null
+                  )}
+                </div>
+
+                <h1 className="text-4xl md:text-5xl font-bold">{previewArticle.title}</h1>
+
+                {previewArticle.excerpt && (
+                  <p className="text-xl text-muted-foreground">{previewArticle.excerpt}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(
+                      previewArticle.published_at || previewArticle.created_at
+                    ).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
+                  {previewArticle.read_time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {previewArticle.read_time}
+                    </span>
+                  )}
+                  {previewArticle.views !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      {previewArticle.views} views
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Article Content */}
+              {previewArticle.content && (() => {
+                try {
+                  // Handle both string and object content
+                  const contentToRender = typeof previewArticle.content === 'string' 
+                    ? JSON.parse(previewArticle.content) 
+                    : previewArticle.content;
+                  return (
+                    <div
+                      className="prose prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-lg"
+                      dangerouslySetInnerHTML={{
+                      __html: generateHTML(contentToRender, [
+                        StarterKit.configure({ codeBlock: false }),
+                        Underline,
+                        LinkExt,
+                        Image,
+                        TiptapTable,
+                        TiptapTableRow,
+                        TiptapTableHeader,
+                        TiptapTableCell,
+                        TextAlign,
+                        Typography,
+                        CodeBlockLowlight.configure({ lowlight }),
+                        Footnote,
+                      ]),
+                      }}
+                    />
+                  );
+                } catch (error) {
+                  return (
+                    <p className="text-muted-foreground italic">
+                      Error rendering preview. Please check your content format.
+                    </p>
+                  );
+                }
+              })()}
+              {!previewArticle.content && (
+                <p className="text-muted-foreground italic">No content available.</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No article data available.</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

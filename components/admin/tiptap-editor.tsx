@@ -17,6 +17,16 @@ import { common, createLowlight } from 'lowlight';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
   Bold,
   Italic,
   Underline as UnderlineIcon,
@@ -37,8 +47,10 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  FileText,
 } from 'lucide-react';
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useState } from 'react';
+import { Footnote } from './footnote-extension';
 
 interface TiptapEditorProps {
   content: string;
@@ -47,7 +59,25 @@ interface TiptapEditorProps {
 }
 
 const MenuBar = ({ editor }: { editor: Editor | null }) => {
+  const [footnoteDialogOpen, setFootnoteDialogOpen] = useState(false);
+  const [footnoteText, setFootnoteText] = useState('');
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+
   if (!editor) return null;
+
+  // Listen to editor updates to refresh footnote list
+  useEffect(() => {
+    if (!editor || !footnoteDialogOpen) return;
+
+    const handleUpdate = () => {
+      setUpdateTrigger((prev) => prev + 1);
+    };
+
+    editor.on('update', handleUpdate);
+    return () => {
+      editor.off('update', handleUpdate);
+    };
+  }, [editor, footnoteDialogOpen]);
 
   const addLink = useCallback(() => {
     const url = window.prompt('Enter URL:');
@@ -66,6 +96,33 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   const addTable = useCallback(() => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   }, [editor]);
+
+  // Get all existing footnotes from the editor
+  const getExistingFootnotes = useCallback(() => {
+    const footnotes: Array<{ number: number; text: string }> = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'footnote') {
+        footnotes.push({
+          number: node.attrs.number,
+          text: node.attrs.text,
+        });
+      }
+    });
+    return footnotes.sort((a, b) => a.number - b.number);
+  }, [editor, updateTrigger]);
+
+  const openFootnoteDialog = useCallback(() => {
+    setFootnoteText('');
+    setFootnoteDialogOpen(true);
+  }, []);
+
+  const addFootnote = useCallback(() => {
+    if (footnoteText.trim()) {
+      editor.chain().focus().setFootnote({ text: footnoteText.trim() }).run();
+      setFootnoteText('');
+      // Keep dialog open for adding more footnotes
+    }
+  }, [editor, footnoteText]);
 
   return (
     <div className="border-b p-2 flex flex-wrap gap-1 bg-secondary/50">
@@ -230,6 +287,9 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Button type="button" variant="ghost" size="sm" onClick={addTable}>
         <TableIcon className="w-4 h-4" />
       </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={openFootnoteDialog}>
+        <FileText className="w-4 h-4" />
+      </Button>
 
       <Separator orientation="vertical" className="h-8" />
 
@@ -252,6 +312,72 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <Redo className="w-4 h-4" />
       </Button>
+
+      {/* Footnote Dialog */}
+      <Dialog open={footnoteDialogOpen} onOpenChange={setFootnoteDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Footnotes</DialogTitle>
+            <DialogDescription>
+              Add and manage footnotes. Enter text and click "Add Footnote" to insert a new one.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Existing Footnotes */}
+            {getExistingFootnotes().length > 0 && (
+              <div className="space-y-2">
+                <Label>Existing Footnotes</Label>
+                <div className="border rounded-lg p-4 space-y-2 max-h-60 overflow-y-auto bg-muted/50">
+                  {getExistingFootnotes().map((fn) => (
+                    <div
+                      key={fn.number}
+                      className="flex gap-3 items-start text-sm p-2 rounded hover:bg-background/50"
+                    >
+                      <span className="font-semibold text-primary min-w-[2rem]">
+                        {fn.number}.
+                      </span>
+                      <span className="text-muted-foreground flex-1">{fn.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add New Footnote */}
+            <div className="space-y-2">
+              <Label htmlFor="footnote-text">Add New Footnote</Label>
+              <Input
+                id="footnote-text"
+                value={footnoteText}
+                onChange={(e) => setFootnoteText(e.target.value)}
+                placeholder="Enter footnote text..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    addFootnote();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setFootnoteDialogOpen(false);
+                setFootnoteText('');
+              }}
+            >
+              Close
+            </Button>
+            <Button type="button" onClick={addFootnote} disabled={!footnoteText.trim()}>
+              Add Footnote
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -307,6 +433,11 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
         },
         exitOnTripleEnter: true,
         exitOnArrowDown: true,
+      }),
+      Footnote.configure({
+        HTMLAttributes: {
+          class: 'footnote-reference',
+        },
       }),
     ],
     content,
