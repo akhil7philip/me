@@ -26,21 +26,21 @@ interface ArticlePreview {
   read_time: string | null;
   views: number | null;
   featured?: boolean;
-  categories?: {
+  categories?: Array<{
     name: string;
-  } | null;
+  }> | null;
   article_tags?: Array<{
-    tags: {
+    tags: Array<{
       name: string;
       color?: string;
-    };
+    }>;
   }>;
   article_series?: Array<{
     position: number;
-    series: {
+    series: Array<{
       name: string;
       slug: string;
-    };
+    }>;
   }>;
 }
 
@@ -84,7 +84,7 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
         .single();
 
       if (fetchError) throw fetchError;
-      setArticle(data);
+      setArticle(data as ArticlePreview);
     } catch (err) {
       console.error('Error fetching article preview:', err);
       setError(true);
@@ -182,13 +182,15 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
                     <p className="text-xs font-medium text-primary">
                       Part {article.article_series[0].position} of Series
                     </p>
-                    <Link
-                      href={`/series/${article.article_series[0].series.slug}`}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors line-clamp-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {article.article_series[0].series.name}
-                    </Link>
+                    {article.article_series[0].series && article.article_series[0].series.length > 0 && (
+                      <Link
+                        href={`/series/${article.article_series[0].series[0].slug}`}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors line-clamp-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {article.article_series[0].series[0].name}
+                      </Link>
+                    )}
                   </div>
                 </div>
               )}
@@ -197,7 +199,8 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
               {article.article_tags && article.article_tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {article.article_tags.slice(0, 3).map((tagRelation, idx) => {
-                    const tag = tagRelation.tags;
+                    const tag = tagRelation.tags && tagRelation.tags.length > 0 ? tagRelation.tags[0] : null;
+                    if (!tag) return null;
                     return (
                       <Badge
                         key={idx}
@@ -219,9 +222,9 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
               )}
               
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
-                {article.categories && (
+                {article.categories && article.categories.length > 0 && (
                   <Badge variant="outline" className="text-xs">
-                    {article.categories.name}
+                    {article.categories[0].name}
                   </Badge>
                 )}
                 {article.published_at && (

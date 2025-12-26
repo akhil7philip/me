@@ -52,7 +52,8 @@ export function ArticleContentRenderer({ htmlContent, className }: ArticleConten
         if (!articleMatch) return;
         
         const slug = articleMatch[1];
-        const text = link.textContent || link.innerText || '';
+        const htmlLink = link as HTMLElement;
+        const text = htmlLink.textContent || htmlLink.innerText || '';
         
         // Skip if slug is invalid
         if (!slug || slug === 'undefined' || slug === 'null') {
