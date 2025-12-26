@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const router = useRouter();
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -189,7 +191,18 @@ export default function ArticlesPage() {
               </TableHeader>
               <TableBody>
                 {filteredArticles.map((article) => (
-                  <TableRow key={article.id}>
+                  <TableRow 
+                    key={article.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={(e) => {
+                      // Don't navigate if clicking on the dropdown menu or its trigger
+                      const target = e.target as HTMLElement;
+                      if (target.closest('[role="menu"]') || target.closest('button')) {
+                        return;
+                      }
+                      router.push(`/admin/articles/${article.id}/edit`);
+                    }}
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
                         {article.featured && (
@@ -205,7 +218,7 @@ export default function ArticlesPage() {
                     <TableCell>
                       {new Date(article.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">

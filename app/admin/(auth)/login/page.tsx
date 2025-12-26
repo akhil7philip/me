@@ -31,15 +31,21 @@ export default function LoginPage() {
     });
 
     if (error) {
+      // Check for specific error types
+      let errorMessage = error.message;
+      if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid password')) {
+        errorMessage = 'Incorrect email or password. Please try again.';
+      }
+      
       toast({
-        title: 'Error',
-        description: error.message,
+        title: 'Login Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Success',
-        description: 'Logged in successfully',
+        title: 'Login Successful',
+        description: 'Welcome back! Redirecting to dashboard...',
       });
       router.push('/admin/dashboard');
     }
