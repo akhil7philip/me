@@ -23,7 +23,7 @@ import slugify from 'slugify';
 import readingTime from 'reading-time';
 import { ArrowLeft, Save, Eye, Upload, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { Category, Tag } from '@/lib/supabase';
+import { Category, Tag, Series } from '@/lib/supabase';
 import {
   Dialog,
   DialogContent,
@@ -70,6 +70,8 @@ interface ArticleState {
   featured: boolean;
   seoTitle: string;
   seoDescription: string;
+  selectedSeriesId: string;
+  seriesPosition: number;
 }
 
 export default function EditArticlePage() {
@@ -93,6 +95,9 @@ export default function EditArticlePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+  const [seriesPosition, setSeriesPosition] = useState<number>(1);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [initialState, setInitialState] = useState<ArticleState | null>(null);
@@ -131,6 +136,7 @@ export default function EditArticlePage() {
   useEffect(() => {
     fetchCategories();
     fetchTags();
+    fetchSeries();
     if (articleId) {
       fetchArticle();
     }
@@ -140,7 +146,7 @@ export default function EditArticlePage() {
     try {
       const { data: article, error } = await supabase
         .from('articles')
-        .select('*, article_tags(tag_id)')
+        .select('*, article_tags(tag_id), article_series(series_id, position, series(*))')
         .eq('id', articleId)
         .single();
 
@@ -160,6 +166,16 @@ export default function EditArticlePage() {
         setSeoDescription(article.seo_description || '');
         setSelectedTags(article.article_tags?.map((at: any) => at.tag_id) || []);
         
+        // Set series data if exists
+        if (article.article_series && article.article_series.length > 0) {
+          const articleSeries = article.article_series[0];
+          setSelectedSeriesId(articleSeries.series_id);
+          setSeriesPosition(articleSeries.position || 1);
+        } else {
+          setSelectedSeriesId('');
+          setSeriesPosition(1);
+        }
+        
         // Set initial state for change detection
         setInitialState({
           title: article.title,
@@ -174,6 +190,12 @@ export default function EditArticlePage() {
           featured: article.featured,
           seoTitle: article.seo_title || '',
           seoDescription: article.seo_description || '',
+          selectedSeriesId: article.article_series && article.article_series.length > 0 
+            ? article.article_series[0].series_id 
+            : '',
+          seriesPosition: article.article_series && article.article_series.length > 0
+            ? article.article_series[0].position || 1
+            : 1,
         });
         
         // Set last saved timestamp from updated_at if available
@@ -203,6 +225,11 @@ export default function EditArticlePage() {
     if (data) setTags(data);
   }
 
+  async function fetchSeries() {
+    const { data } = await supabase.from('series').select('*').order('name');
+    if (data) setSeries(data);
+  }
+
   // Update state refs whenever state changes
   useEffect(() => {
     stateRef.current = {
@@ -218,8 +245,10 @@ export default function EditArticlePage() {
       featured,
       seoTitle,
       seoDescription,
+      selectedSeriesId,
+      seriesPosition,
     };
-  }, [title, slug, content, excerpt, coverImage, musicPlaylist, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
+  }, [title, slug, content, excerpt, coverImage, musicPlaylist, categoryId, selectedTags, status, featured, seoTitle, seoDescription, selectedSeriesId, seriesPosition]);
   
   useEffect(() => {
     initialStateRef.current = initialState;
@@ -244,7 +273,9 @@ export default function EditArticlePage() {
       currentState.status !== initial.status ||
       currentState.featured !== initial.featured ||
       currentState.seoTitle !== initial.seoTitle ||
-      currentState.seoDescription !== initial.seoDescription
+      currentState.seoDescription !== initial.seoDescription ||
+      currentState.selectedSeriesId !== initial.selectedSeriesId ||
+      currentState.seriesPosition !== initial.seriesPosition
     );
   };
 
@@ -266,6 +297,8 @@ export default function EditArticlePage() {
       featured,
       seoTitle,
       seoDescription,
+      selectedSeriesId,
+      seriesPosition,
     };
     
     isSavingRef.current = true;
@@ -316,6 +349,21 @@ export default function EditArticlePage() {
           .insert(articleTags);
 
         if (tagsError) throw tagsError;
+      }
+
+      // Update article series relationship
+      await supabase.from('article_series').delete().eq('article_id', articleId);
+
+      if (currentState.selectedSeriesId) {
+        const { error: seriesError } = await supabase
+          .from('article_series')
+          .insert({
+            article_id: articleId,
+            series_id: currentState.selectedSeriesId,
+            position: currentState.seriesPosition,
+          });
+
+        if (seriesError) throw seriesError;
       }
 
       // Save version history (only for manual saves, not auto-saves)
@@ -828,6 +876,48 @@ export default function EditArticlePage() {
                     </Button>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Series</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select series (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {series.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSeriesId && (
+                  <div>
+                    <Label htmlFor="seriesPosition">Position in Series</Label>
+                    <Input
+                      id="seriesPosition"
+                      type="number"
+                      min="1"
+                      value={seriesPosition}
+                      onChange={(e) => setSeriesPosition(parseInt(e.target.value) || 1)}
+                      placeholder="1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Order of this article in the series
+                    </p>
+                  </div>
+                )}
+                {series.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No series available. <Link href="/admin/series" className="text-primary">Create one</Link>
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -23,7 +23,7 @@ import slugify from 'slugify';
 import readingTime from 'reading-time';
 import { ArrowLeft, Save, Eye, Upload, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { Category, Tag } from '@/lib/supabase';
+import { Category, Tag, Series } from '@/lib/supabase';
 
 export default function NewArticlePage() {
   const [title, setTitle] = useState('');
@@ -42,6 +42,9 @@ export default function NewArticlePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+  const [seriesPosition, setSeriesPosition] = useState<number>(1);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -56,6 +59,7 @@ export default function NewArticlePage() {
   useEffect(() => {
     fetchCategories();
     fetchTags();
+    fetchSeries();
   }, []);
 
   useEffect(() => {
@@ -73,6 +77,11 @@ export default function NewArticlePage() {
   async function fetchTags() {
     const { data } = await supabase.from('tags').select('*').order('name');
     if (data) setTags(data);
+  }
+
+  async function fetchSeries() {
+    const { data } = await supabase.from('series').select('*').order('name');
+    if (data) setSeries(data);
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,6 +131,19 @@ export default function NewArticlePage() {
           .insert(articleTags);
 
         if (tagsError) throw tagsError;
+      }
+
+      // Insert article series relationship
+      if (selectedSeriesId && article) {
+        const { error: seriesError } = await supabase
+          .from('article_series')
+          .insert({
+            article_id: article.id,
+            series_id: selectedSeriesId,
+            position: seriesPosition,
+          });
+
+        if (seriesError) throw seriesError;
       }
 
       toast({
@@ -520,6 +542,48 @@ export default function NewArticlePage() {
                 {tags.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No tags available. <Link href="/admin/tags" className="text-primary">Create one</Link>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Series</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select series (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {series.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSeriesId && (
+                  <div>
+                    <Label htmlFor="seriesPosition">Position in Series</Label>
+                    <Input
+                      id="seriesPosition"
+                      type="number"
+                      min="1"
+                      value={seriesPosition}
+                      onChange={(e) => setSeriesPosition(parseInt(e.target.value) || 1)}
+                      placeholder="1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Order of this article in the series
+                    </p>
+                  </div>
+                )}
+                {series.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No series available. <Link href="/admin/series" className="text-primary">Create one</Link>
                   </p>
                 )}
               </CardContent>

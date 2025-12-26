@@ -104,4 +104,20 @@ export type AuthorProfile = {
   linkedin: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Series = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  cover_image: string | null;
+  created_at: string;
+};
+
+export type ArticleSeries = {
+  article_id: string;
+  series_id: string;
+  position: number;
+  series?: Series;
 }; 

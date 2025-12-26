@@ -69,6 +69,7 @@ export default function ArticlePage() {
 
   const [article, setArticle] = useState<any>(null);
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  const [seriesArticles, setSeriesArticles] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [reactions, setReactions] = useState<Record<ReactionType, number>>({
     like: 0,
@@ -120,7 +121,7 @@ export default function ArticlePage() {
     try {
       const { data, error } = await supabase
         .from('articles')
-        .select('*, categories(*), article_tags(tags(*))')
+        .select('*, categories(*), article_tags(tags(*)), article_series(series_id, position, series(*))')
         .eq('slug', slug)
         .eq('status', 'published')
         .single();
@@ -132,6 +133,11 @@ export default function ArticlePage() {
       fetchReactions(data.id);
       fetchRelatedArticles(data);
       checkBookmark(data.id);
+      
+      // Fetch other articles in the same series if article is part of a series
+      if (data.article_series && data.article_series.length > 0) {
+        fetchSeriesArticles(data.article_series[0].series_id, data.id);
+      }
     } catch (error) {
       console.error('Error fetching article:', error);
       toast({
@@ -142,6 +148,34 @@ export default function ArticlePage() {
       router.push('/articles');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchSeriesArticles(seriesId: string, currentArticleId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('article_series')
+        .select('position, articles(id, slug, title, excerpt, cover_image, published_at, status)')
+        .eq('series_id', seriesId)
+        .order('position', { ascending: true });
+
+      if (error) throw error;
+
+      // Filter out current article and only show published articles
+      const filtered = (data || [])
+        .filter((item: any) => 
+          item.articles && 
+          item.articles.id !== currentArticleId &&
+          item.articles.status === 'published'
+        )
+        .map((item: any) => ({
+          ...item.articles,
+          position: item.position,
+        }));
+
+      setSeriesArticles(filtered);
+    } catch (error) {
+      console.error('Error fetching series articles:', error);
     }
   }
 
@@ -396,6 +430,13 @@ export default function ArticlePage() {
               {article.categories && (
                 <Badge variant="outline">{article.categories.name}</Badge>
               )}
+              {article.article_series && article.article_series.length > 0 && article.article_series[0].series && (
+                <Link href={`/series/${article.article_series[0].series.slug}`}>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer">
+                    Series: {article.article_series[0].series.name} (Part {article.article_series[0].position})
+                  </Badge>
+                </Link>
+              )}
               {article.article_tags?.map((at: any) => (
                 at.tags && (
                   <Badge
@@ -577,6 +618,50 @@ export default function ArticlePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Series Articles */}
+          {seriesArticles.length > 0 && article.article_series && article.article_series.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {article.article_series[0].series.name} Series
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Other articles in this series
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {seriesArticles.map((seriesArticle) => (
+                    <Link key={seriesArticle.id} href={`/articles/${seriesArticle.slug}`}>
+                      <Card className="h-full hover:shadow-lg transition-shadow">
+                        {seriesArticle.cover_image && (
+                          <img
+                            src={seriesArticle.cover_image}
+                            alt={seriesArticle.title}
+                            className="w-full h-32 object-cover rounded-t-lg"
+                          />
+                        )}
+                        <CardHeader>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              Part {seriesArticle.position}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-sm line-clamp-2">{seriesArticle.title}</CardTitle>
+                          {seriesArticle.excerpt && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                              {seriesArticle.excerpt}
+                            </p>
+                          )}
+                        </CardHeader>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Related Articles */}
           {relatedArticles.length > 0 && (
