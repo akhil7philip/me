@@ -43,7 +43,6 @@ import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { Footnote } from '@/components/admin/footnote-extension';
-import { ArticleLink } from '@/components/admin/article-link-extension';
 import {
   FacebookShareButton,
   TwitterShareButton,
@@ -386,7 +385,6 @@ export default function ArticlePage() {
     Typography,
     CodeBlockLowlight.configure({ lowlight }),
     Footnote,
-    ArticleLink,
   ]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';

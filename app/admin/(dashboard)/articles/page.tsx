@@ -48,6 +48,7 @@ import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { Footnote } from '@/components/admin/footnote-extension';
+import { ArticleContentRenderer } from '@/components/article-content-renderer';
 import { Calendar, Clock } from 'lucide-react';
 
 const lowlight = createLowlight(common);
@@ -392,25 +393,24 @@ export default function ArticlesPage() {
                   const contentToRender = typeof previewArticle.content === 'string' 
                     ? JSON.parse(previewArticle.content) 
                     : previewArticle.content;
+                  const htmlContent = generateHTML(contentToRender, [
+                    StarterKit.configure({ codeBlock: false }),
+                    Underline,
+                    LinkExt,
+                    Image,
+                    TiptapTable,
+                    TiptapTableRow,
+                    TiptapTableHeader,
+                    TiptapTableCell,
+                    TextAlign,
+                    Typography,
+                    CodeBlockLowlight.configure({ lowlight }),
+                    Footnote,
+                  ]);
                   return (
-                    <div
+                    <ArticleContentRenderer
+                      htmlContent={htmlContent}
                       className="prose prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-lg"
-                      dangerouslySetInnerHTML={{
-                      __html: generateHTML(contentToRender, [
-                        StarterKit.configure({ codeBlock: false }),
-                        Underline,
-                        LinkExt,
-                        Image,
-                        TiptapTable,
-                        TiptapTableRow,
-                        TiptapTableHeader,
-                        TiptapTableCell,
-                        TextAlign,
-                        Typography,
-                        CodeBlockLowlight.configure({ lowlight }),
-                        Footnote,
-                      ]),
-                      }}
                     />
                   );
                 } catch (error) {

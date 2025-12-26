@@ -44,6 +44,7 @@ import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { Footnote } from '@/components/admin/footnote-extension';
+import { ArticleContentRenderer } from '@/components/article-content-renderer';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock } from 'lucide-react';
@@ -106,7 +107,7 @@ export default function EditArticlePage() {
   const isSavingRef = useRef(false);
   
   // Refs to store latest values for auto-save
-  const stateRef = useRef({
+  const stateRef = useRef<ArticleState>({
     title,
     slug,
     content,
@@ -119,6 +120,8 @@ export default function EditArticlePage() {
     featured,
     seoTitle,
     seoDescription,
+    selectedSeriesId,
+    seriesPosition,
   });
   
   const initialStateRef = useRef(initialState);
@@ -261,10 +264,13 @@ export default function EditArticlePage() {
     
     if (!initial) return false;
     
+    // Deep compare content objects using JSON.stringify
+    const contentChanged = JSON.stringify(currentState.content) !== JSON.stringify(initial.content);
+    
     return (
       currentState.title !== initial.title ||
       currentState.slug !== initial.slug ||
-      currentState.content !== initial.content ||
+      contentChanged ||
       currentState.excerpt !== initial.excerpt ||
       currentState.coverImage !== initial.coverImage ||
       JSON.stringify(currentState.musicPlaylist) !== JSON.stringify(initial.musicPlaylist) ||
@@ -284,7 +290,7 @@ export default function EditArticlePage() {
     if (!user || !articleId || isSavingRef.current) return false;
     
     // Get current state from refs for auto-save, or use state directly for manual save
-    const currentState = isAutoSave ? stateRef.current : {
+    const currentState: ArticleState = isAutoSave ? stateRef.current : {
       title,
       slug,
       content,
@@ -309,8 +315,31 @@ export default function EditArticlePage() {
     }
 
     try {
+      // Validate content is valid JSON
+      let contentToSave = currentState.content;
+      if (typeof contentToSave === 'string') {
+        try {
+          contentToSave = JSON.parse(contentToSave);
+        } catch (e) {
+          console.error('Invalid content format:', e);
+          if (!isAutoSave) {
+            toast({
+              title: 'Error',
+              description: 'Content format is invalid',
+              variant: 'destructive',
+            });
+          }
+          return false;
+        }
+      }
+      
+      // Validate musicPlaylist is an array
+      const musicPlaylistToSave = Array.isArray(currentState.musicPlaylist) 
+        ? currentState.musicPlaylist 
+        : [];
+
       // Calculate reading time
-      const stats = readingTime(JSON.stringify(currentState.content));
+      const stats = readingTime(JSON.stringify(contentToSave));
       const readTime = stats.text;
 
       // Update article
@@ -319,10 +348,10 @@ export default function EditArticlePage() {
         .update({
           title: currentState.title,
           slug: currentState.slug,
-          content: currentState.content,
+          content: contentToSave,
           excerpt: currentState.excerpt,
           cover_image: currentState.coverImage || null,
-          music_playlist: currentState.musicPlaylist || [],
+          music_playlist: musicPlaylistToSave,
           category_id: currentState.categoryId || null,
           status: currentState.status,
           published_at: currentState.status === 'published' && !isAutoSave ? new Date().toISOString() : undefined,
@@ -333,7 +362,10 @@ export default function EditArticlePage() {
         })
         .eq('id', articleId);
 
-      if (articleError) throw articleError;
+      if (articleError) {
+        console.error('Article save error:', articleError);
+        throw articleError;
+      }
 
       // Update article tags
       await supabase.from('article_tags').delete().eq('article_id', articleId);
@@ -384,16 +416,18 @@ export default function EditArticlePage() {
       const newInitialState = {
         title: currentState.title,
         slug: currentState.slug,
-        content: currentState.content,
+        content: contentToSave, // Use the validated content
         excerpt: currentState.excerpt,
         coverImage: currentState.coverImage,
-        musicPlaylist: currentState.musicPlaylist,
+        musicPlaylist: musicPlaylistToSave, // Use the validated playlist
         categoryId: currentState.categoryId,
         selectedTags: [...currentState.selectedTags],
         status: currentState.status,
         featured: currentState.featured,
         seoTitle: currentState.seoTitle,
         seoDescription: currentState.seoDescription,
+        selectedSeriesId: currentState.selectedSeriesId,
+        seriesPosition: currentState.seriesPosition,
       };
       
       setInitialState(newInitialState);
@@ -534,21 +568,21 @@ export default function EditArticlePage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link href="/admin/articles">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Edit Article</h1>
-            <p className="text-muted-foreground">Update your blog post</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link href="/admin/articles">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold">Edit Article</h1>
+              <p className="text-muted-foreground">Update your blog post</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -1007,25 +1041,24 @@ export default function EditArticlePage() {
               try {
                 // Handle both string and object content
                 const contentToRender = typeof content === 'string' ? JSON.parse(content) : content;
+                const htmlContent = generateHTML(contentToRender, [
+                  StarterKit.configure({ codeBlock: false }),
+                  Underline,
+                  LinkExt,
+                  Image,
+                  Table,
+                  TableRow,
+                  TableHeader,
+                  TableCell,
+                  TextAlign,
+                  Typography,
+                  CodeBlockLowlight.configure({ lowlight }),
+                  Footnote,
+                ]);
                 return (
-                  <div
+                  <ArticleContentRenderer
+                    htmlContent={htmlContent}
                     className="prose prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-lg"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(contentToRender, [
-                        StarterKit.configure({ codeBlock: false }),
-                        Underline,
-                        LinkExt,
-                        Image,
-                        Table,
-                        TableRow,
-                        TableHeader,
-                        TableCell,
-                        TextAlign,
-                        Typography,
-                        CodeBlockLowlight.configure({ lowlight }),
-                        Footnote,
-                      ]),
-                    }}
                   />
                 );
               } catch (error) {

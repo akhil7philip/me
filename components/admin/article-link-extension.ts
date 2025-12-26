@@ -45,17 +45,6 @@ export const ArticleLink = Mark.create<ArticleLinkOptions>({
           }
           return {
             'data-article-slug': attributes.slug,
-          };
-        },
-      },
-      href: {
-        default: null,
-        parseHTML: (element) => element.getAttribute('href'),
-        renderHTML: (attributes) => {
-          if (!attributes.slug) {
-            return {};
-          }
-          return {
             href: `/articles/${attributes.slug}`,
           };
         },
@@ -78,14 +67,31 @@ export const ArticleLink = Mark.create<ArticleLinkOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes, mark }) {
+    // For marks, attributes are in mark.attrs, but TipTap also merges them into HTMLAttributes
+    const slug = mark?.attrs?.slug || HTMLAttributes?.slug;
+    
+    if (!slug) {
+      console.warn('ArticleLink: slug is missing in renderHTML', { 
+        HTMLAttributes, 
+        markAttrs: mark?.attrs,
+        mark 
+      });
+      // Return a plain link without the article link attributes
+      return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+    }
+    
     return [
       'a',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: 'article-link',
-        'data-article-slug': HTMLAttributes.slug,
-        href: `/articles/${HTMLAttributes.slug}`,
-      }),
+      mergeAttributes(
+        this.options.HTMLAttributes, 
+        HTMLAttributes, 
+        {
+          class: 'article-link',
+          'data-article-slug': slug,
+          href: `/articles/${slug}`,
+        }
+      ),
       0,
     ];
   },
@@ -94,21 +100,36 @@ export const ArticleLink = Mark.create<ArticleLinkOptions>({
     return {
       setArticleLink:
         (options) =>
-        ({ commands }) => {
+        ({ commands, state, tr, dispatch }) => {
           const { slug, text } = options;
           
+          if (!slug) {
+            console.error('ArticleLink: slug is required');
+            return false;
+          }
+          
           if (text) {
-            // Insert text and wrap it with article link
-            return commands.insertContent({
-              type: 'text',
-              text,
-              marks: [
-                {
-                  type: this.name,
-                  attrs: { slug },
-                },
-              ],
-            });
+            // Insert text first, then select it and apply the mark
+            // This is more reliable than insertContent with marks
+            const { from } = state.selection;
+            const to = from + text.length;
+            
+            // Insert the text
+            tr.insertText(text, from);
+            
+            // Set selection to the inserted text
+            tr.setSelection(state.tr.doc.resolve(from).createRange(state.tr.doc.resolve(to)));
+            
+            // Apply the mark with attributes
+            const markType = this.type;
+            const mark = markType.create({ slug });
+            tr.addMark(from, to, mark);
+            
+            if (dispatch) {
+              dispatch(tr);
+            }
+            
+            return true;
           } else {
             // Wrap selected text with article link
             return commands.setMark(this.name, { slug });
