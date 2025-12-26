@@ -125,7 +125,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   }, [editor, footnoteText]);
 
   return (
-    <div className="border-b p-2 flex flex-wrap gap-1 bg-secondary/50">
+    <div className="sticky top-0 z-50 border-b p-2 flex flex-wrap gap-1 bg-background backdrop-blur-sm shadow-sm" style={{ position: '-webkit-sticky' } as React.CSSProperties}>
       {/* Text Formatting */}
       <Button
         type="button"
@@ -476,7 +476,7 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-background">
+    <div className="border rounded-lg bg-background">
       <MenuBar editor={editor} />
       <EditorContent editor={editor} />
     </div>
