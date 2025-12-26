@@ -366,9 +366,7 @@ export default function ArticlePage() {
 
       {/* Music Player */}
       <ArticleMusicPlayer 
-        musicUrl={article.music_url} 
-        musicArtistName={article.music_artist_name}
-        musicSongName={article.music_song_name}
+        musicPlaylist={article.music_playlist}
       />
 
       <div className={`container mx-auto px-4 py-8 max-w-4xl ${article.music_url ? 'pt-14' : ''}`}>

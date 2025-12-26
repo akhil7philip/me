@@ -21,7 +21,7 @@ import { TiptapEditor } from '@/components/admin/tiptap-editor';
 import { useAuth } from '@/lib/auth-context';
 import slugify from 'slugify';
 import readingTime from 'reading-time';
-import { ArrowLeft, Save, Eye, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Category, Tag } from '@/lib/supabase';
 
@@ -31,9 +31,7 @@ export default function NewArticlePage() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [musicUrl, setMusicUrl] = useState('');
-  const [musicArtistName, setMusicArtistName] = useState('');
-  const [musicSongName, setMusicSongName] = useState('');
+  const [musicPlaylist, setMusicPlaylist] = useState<Array<{link: string; song_name?: string; artist?: string}>>([]);
   const [categoryId, setCategoryId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -97,9 +95,7 @@ export default function NewArticlePage() {
           content,
           excerpt,
           cover_image: coverImage || null,
-          music_url: musicUrl || null,
-          music_artist_name: musicArtistName || null,
-          music_song_name: musicSongName || null,
+          music_playlist: musicPlaylist || [],
           author_id: user.id,
           category_id: categoryId || null,
           status,
@@ -401,46 +397,85 @@ export default function NewArticlePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Background Music</CardTitle>
+                <CardTitle>Background Music Playlist</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="musicUrl">Music URL</Label>
-                  <Input
-                    id="musicUrl"
-                    value={musicUrl}
-                    onChange={(e) => setMusicUrl(e.target.value)}
-                    placeholder="https://example.com/music.mp3 or YouTube URL"
-                    type="url"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Optional. Supports direct audio files or YouTube URLs. Music will auto-play when the article is viewed.
-                  </p>
+                <div className="space-y-3">
+                  {musicPlaylist.map((song, index) => (
+                    <div key={index} className="p-3 border rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Song {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newPlaylist = musicPlaylist.filter((_, i) => i !== index);
+                            setMusicPlaylist(newPlaylist);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div>
+                        <Label htmlFor={`song-link-${index}`}>Link</Label>
+                        <Input
+                          id={`song-link-${index}`}
+                          value={song.link}
+                          onChange={(e) => {
+                            const newPlaylist = [...musicPlaylist];
+                            newPlaylist[index].link = e.target.value;
+                            setMusicPlaylist(newPlaylist);
+                          }}
+                          placeholder="https://example.com/music.mp3 or YouTube URL"
+                          type="url"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor={`song-name-${index}`}>Song Name</Label>
+                          <Input
+                            id={`song-name-${index}`}
+                            value={song.song_name || ''}
+                            onChange={(e) => {
+                              const newPlaylist = [...musicPlaylist];
+                              newPlaylist[index].song_name = e.target.value;
+                              setMusicPlaylist(newPlaylist);
+                            }}
+                            placeholder="Song title"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`song-artist-${index}`}>Artist</Label>
+                          <Input
+                            id={`song-artist-${index}`}
+                            value={song.artist || ''}
+                            onChange={(e) => {
+                              const newPlaylist = [...musicPlaylist];
+                              newPlaylist[index].artist = e.target.value;
+                              setMusicPlaylist(newPlaylist);
+                            }}
+                            placeholder="Artist name"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setMusicPlaylist([...musicPlaylist, { link: '', song_name: '', artist: '' }]);
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Song
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="musicSongName">Song Name</Label>
-                  <Input
-                    id="musicSongName"
-                    value={musicSongName}
-                    onChange={(e) => setMusicSongName(e.target.value)}
-                    placeholder="Song title"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Optional. Used for credits display.
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="musicArtistName">Artist Name</Label>
-                  <Input
-                    id="musicArtistName"
-                    value={musicArtistName}
-                    onChange={(e) => setMusicArtistName(e.target.value)}
-                    placeholder="Artist/Composer name"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Optional. Used for credits display.
-                  </p>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Optional. Songs will play sequentially. Supports direct audio files or YouTube URLs.
+                </p>
               </CardContent>
             </Card>
 

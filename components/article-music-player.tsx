@@ -2,15 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX, Music } from 'lucide-react';
+import { Volume2, VolumeX, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { RecordPlayer } from '@/components/record-player';
 
+interface Song {
+  link: string;
+  song_name?: string;
+  artist?: string;
+}
+
 interface ArticleMusicPlayerProps {
-  musicUrl?: string | null;
-  musicArtistName?: string | null;
-  musicSongName?: string | null;
+  musicPlaylist?: Song[] | null;
   className?: string;
   variant?: 'fixed' | 'relative';
 }
@@ -37,21 +41,27 @@ function isYouTubeUrl(url: string): boolean {
 }
 
 export function ArticleMusicPlayer({ 
-  musicUrl, 
-  musicArtistName, 
-  musicSongName,
+  musicPlaylist,
   className, 
   variant = 'fixed' 
 }: ArticleMusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const youtubeIframeRef = useRef<HTMLIFrameElement>(null);
+  const wasPlayingRef = useRef(false); // Track if we were playing before song change
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([50]); // Volume as percentage (0-100)
   const [userPreference, setUserPreference] = useState<boolean | null>(null);
   const [audioError, setAudioError] = useState(false);
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const [audioReady, setAudioReady] = useState(false);
+
+  // Get current song from playlist
+  const currentSong = musicPlaylist && musicPlaylist.length > 0 
+    ? musicPlaylist[currentSongIndex] 
+    : null;
+  const musicUrl = currentSong?.link || null;
 
   // Check if URL is YouTube and extract video ID
   useEffect(() => {
@@ -101,20 +111,23 @@ export function ArticleMusicPlayer({
   useEffect(() => {
     if (!musicUrl) return;
 
-    const shouldAutoPlay = userPreference !== false; // Auto-play by default unless explicitly disabled
+    const shouldAutoPlay = userPreference !== false || wasPlayingRef.current; // Auto-play by default or if we were playing
 
     if (isYouTube && youtubeVideoId) {
-      // For YouTube, we'll use iframe embed
+      // For YouTube, update iframe embed
+      if (youtubeIframeRef.current) {
+        youtubeIframeRef.current.src = `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=${shouldAutoPlay ? 1 : 0}&loop=1&playlist=${youtubeVideoId}&controls=0&modestbranding=1&enablejsapi=1`;
+      }
       if (shouldAutoPlay) {
-        // YouTube iframe will handle autoplay
         setIsPlaying(true);
+        wasPlayingRef.current = false; // Reset after using it
       }
     } else if (audioRef.current) {
       // Load the audio source for non-YouTube URLs
       audioRef.current.load();
 
       if (shouldAutoPlay) {
-        // Small delay to ensure audio is loaded, especially in preview mode
+        // Small delay to ensure audio is loaded
         const playTimeout = setTimeout(() => {
           if (audioRef.current) {
             // Attempt to play (may fail due to browser autoplay policies)
@@ -125,13 +138,34 @@ export function ArticleMusicPlayer({
               setAudioError(false);
             });
             setIsPlaying(true);
+            wasPlayingRef.current = false; // Reset after using it
           }
         }, 100);
 
         return () => clearTimeout(playTimeout);
       }
     }
-  }, [musicUrl, userPreference, isYouTube, youtubeVideoId]);
+  }, [musicUrl, userPreference, isYouTube, youtubeVideoId, currentSongIndex]);
+
+  // Move to next song
+  const playNextSong = () => {
+    if (!musicPlaylist || musicPlaylist.length === 0) return;
+    
+    wasPlayingRef.current = isPlaying; // Remember playing state
+    const nextIndex = (currentSongIndex + 1) % musicPlaylist.length;
+    setCurrentSongIndex(nextIndex);
+  };
+
+  // Move to previous song
+  const playPreviousSong = () => {
+    if (!musicPlaylist || musicPlaylist.length === 0) return;
+    
+    wasPlayingRef.current = isPlaying; // Remember playing state
+    const prevIndex = currentSongIndex === 0 
+      ? musicPlaylist.length - 1 
+      : currentSongIndex - 1;
+    setCurrentSongIndex(prevIndex);
+  };
 
   const togglePlayPause = () => {
     if (isYouTube && youtubeVideoId) {
@@ -180,8 +214,8 @@ export function ArticleMusicPlayer({
     setVolume(newVolume);
   };
 
-  // Don't render if no music URL is provided
-  if (!musicUrl) return null;
+  // Don't render if no playlist or empty playlist
+  if (!musicPlaylist || musicPlaylist.length === 0 || !musicUrl) return null;
 
   const positionClasses = variant === 'fixed' 
     ? "fixed top-1 left-0 right-0 z-40"
@@ -191,14 +225,21 @@ export function ArticleMusicPlayer({
     ? `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=${isPlaying ? 1 : 0}&loop=1&playlist=${youtubeVideoId}&controls=0&modestbranding=1&enablejsapi=1`
     : null;
 
-  // Format credits
-  const creditsText = musicArtistName && musicSongName
-    ? `${musicSongName} by ${musicArtistName}`
-    : musicArtistName
-    ? `by ${musicArtistName}`
-    : musicSongName
-    ? musicSongName
+  // Format credits for current song
+  const creditsText = currentSong
+    ? currentSong.song_name && currentSong.artist
+      ? `${currentSong.song_name} by ${currentSong.artist}`
+      : currentSong.artist
+      ? `by ${currentSong.artist}`
+      : currentSong.song_name
+      ? currentSong.song_name
+      : 'Background Music'
     : 'Background Music';
+
+  // Show playlist info if multiple songs
+  const playlistInfo = musicPlaylist && musicPlaylist.length > 1
+    ? ` (${currentSongIndex + 1}/${musicPlaylist.length})`
+    : '';
 
   return (
     <>
@@ -219,6 +260,19 @@ export function ArticleMusicPlayer({
               <RecordPlayer isPlaying={isPlaying} />
             </div>
 
+            {/* Previous Song Button */}
+            {musicPlaylist && musicPlaylist.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={playPreviousSong}
+                className="flex-shrink-0"
+                aria-label="Previous song"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            )}
+
             {/* Play/Pause Button */}
             <Button
               variant="ghost"
@@ -236,6 +290,19 @@ export function ArticleMusicPlayer({
                 {isPlaying ? 'Playing' : 'Paused'}
               </span>
             </Button>
+
+            {/* Next Song Button */}
+            {musicPlaylist && musicPlaylist.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={playNextSong}
+                className="flex-shrink-0"
+                aria-label="Next song"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
 
             {/* Volume Control */}
             {!isYouTube && (
@@ -260,7 +327,7 @@ export function ArticleMusicPlayer({
               )}
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Music className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{creditsText}</span>
+                <span className="truncate">{creditsText}{playlistInfo}</span>
               </div>
             </div>
           </div>
@@ -272,7 +339,7 @@ export function ArticleMusicPlayer({
         <audio
           ref={audioRef}
           src={musicUrl}
-          loop
+          loop={musicPlaylist && musicPlaylist.length === 1}
           preload="auto"
           onCanPlay={() => {
             setAudioReady(true);
@@ -287,7 +354,13 @@ export function ArticleMusicPlayer({
             setAudioError(false);
           }}
           onPause={() => setIsPlaying(false)}
-          onEnded={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            // Auto-play next song if there are more songs
+            if (musicPlaylist && musicPlaylist.length > 1) {
+              playNextSong();
+            }
+          }}
           onError={(e) => {
             console.error('Audio error:', e);
             setAudioError(true);
