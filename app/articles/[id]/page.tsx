@@ -365,9 +365,13 @@ export default function ArticlePage() {
       </div>
 
       {/* Music Player */}
-      <ArticleMusicPlayer musicUrl={article.music_url} />
+      <ArticleMusicPlayer 
+        musicUrl={article.music_url} 
+        musicArtistName={article.music_artist_name}
+        musicSongName={article.music_song_name}
+      />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl" style={{ paddingTop: article.music_url ? '3.5rem' : '0' }}>
+      <div className={`container mx-auto px-4 py-8 max-w-4xl ${article.music_url ? 'pt-14' : ''}`}>
         {/* Header */}
         <div className="mb-8">
           <Link href="/articles">

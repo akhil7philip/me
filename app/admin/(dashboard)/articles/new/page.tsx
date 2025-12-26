@@ -31,6 +31,9 @@ export default function NewArticlePage() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
+  const [musicArtistName, setMusicArtistName] = useState('');
+  const [musicSongName, setMusicSongName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -94,6 +97,9 @@ export default function NewArticlePage() {
           content,
           excerpt,
           cover_image: coverImage || null,
+          music_url: musicUrl || null,
+          music_artist_name: musicArtistName || null,
+          music_song_name: musicSongName || null,
           author_id: user.id,
           category_id: categoryId || null,
           status,
@@ -390,6 +396,51 @@ export default function NewArticlePage() {
                     className="mt-4 rounded-lg w-full"
                   />
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Background Music</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="musicUrl">Music URL</Label>
+                  <Input
+                    id="musicUrl"
+                    value={musicUrl}
+                    onChange={(e) => setMusicUrl(e.target.value)}
+                    placeholder="https://example.com/music.mp3 or YouTube URL"
+                    type="url"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. Supports direct audio files or YouTube URLs. Music will auto-play when the article is viewed.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="musicSongName">Song Name</Label>
+                  <Input
+                    id="musicSongName"
+                    value={musicSongName}
+                    onChange={(e) => setMusicSongName(e.target.value)}
+                    placeholder="Song title"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. Used for credits display.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="musicArtistName">Artist Name</Label>
+                  <Input
+                    id="musicArtistName"
+                    value={musicArtistName}
+                    onChange={(e) => setMusicArtistName(e.target.value)}
+                    placeholder="Artist/Composer name"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. Used for credits display.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 

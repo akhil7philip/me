@@ -47,6 +47,7 @@ import { Footnote } from '@/components/admin/footnote-extension';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock } from 'lucide-react';
+import { ArticleMusicPlayer } from '@/components/article-music-player';
 
 const lowlight = createLowlight(common);
 
@@ -57,6 +58,8 @@ interface ArticleState {
   excerpt: string;
   coverImage: string;
   musicUrl: string;
+  musicArtistName: string;
+  musicSongName: string;
   categoryId: string;
   selectedTags: string[];
   status: 'draft' | 'published';
@@ -75,6 +78,8 @@ export default function EditArticlePage() {
   const [excerpt, setExcerpt] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [musicUrl, setMusicUrl] = useState('');
+  const [musicArtistName, setMusicArtistName] = useState('');
+  const [musicSongName, setMusicSongName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -101,6 +106,8 @@ export default function EditArticlePage() {
     excerpt,
     coverImage,
     musicUrl,
+    musicArtistName,
+    musicSongName,
     categoryId,
     selectedTags,
     status,
@@ -146,6 +153,8 @@ export default function EditArticlePage() {
         setExcerpt(article.excerpt || '');
         setCoverImage(article.cover_image || '');
         setMusicUrl(article.music_url || '');
+        setMusicArtistName(article.music_artist_name || '');
+        setMusicSongName(article.music_song_name || '');
         setCategoryId(article.category_id || '');
         setStatus(article.status);
         setFeatured(article.featured);
@@ -161,6 +170,8 @@ export default function EditArticlePage() {
           excerpt: article.excerpt || '',
           coverImage: article.cover_image || '',
           musicUrl: article.music_url || '',
+          musicArtistName: article.music_artist_name || '',
+          musicSongName: article.music_song_name || '',
           categoryId: article.category_id || '',
           selectedTags: article.article_tags?.map((at: any) => at.tag_id) || [],
           status: article.status,
@@ -205,6 +216,8 @@ export default function EditArticlePage() {
       excerpt,
       coverImage,
       musicUrl,
+      musicArtistName,
+      musicSongName,
       categoryId,
       selectedTags,
       status,
@@ -212,7 +225,7 @@ export default function EditArticlePage() {
       seoTitle,
       seoDescription,
     };
-  }, [title, slug, content, excerpt, coverImage, musicUrl, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
+  }, [title, slug, content, excerpt, coverImage, musicUrl, musicArtistName, musicSongName, categoryId, selectedTags, status, featured, seoTitle, seoDescription]);
   
   useEffect(() => {
     initialStateRef.current = initialState;
@@ -232,6 +245,8 @@ export default function EditArticlePage() {
       currentState.excerpt !== initial.excerpt ||
       currentState.coverImage !== initial.coverImage ||
       currentState.musicUrl !== initial.musicUrl ||
+      currentState.musicArtistName !== initial.musicArtistName ||
+      currentState.musicSongName !== initial.musicSongName ||
       currentState.categoryId !== initial.categoryId ||
       JSON.stringify(currentState.selectedTags.sort()) !== JSON.stringify(initial.selectedTags.sort()) ||
       currentState.status !== initial.status ||
@@ -253,6 +268,8 @@ export default function EditArticlePage() {
       excerpt,
       coverImage,
       musicUrl,
+      musicArtistName,
+      musicSongName,
       categoryId,
       selectedTags,
       status,
@@ -283,6 +300,8 @@ export default function EditArticlePage() {
           excerpt: currentState.excerpt,
           cover_image: currentState.coverImage || null,
           music_url: currentState.musicUrl || null,
+          music_artist_name: currentState.musicArtistName || null,
+          music_song_name: currentState.musicSongName || null,
           category_id: currentState.categoryId || null,
           status: currentState.status,
           published_at: currentState.status === 'published' && !isAutoSave ? new Date().toISOString() : undefined,
@@ -333,6 +352,8 @@ export default function EditArticlePage() {
         excerpt: currentState.excerpt,
         coverImage: currentState.coverImage,
         musicUrl: currentState.musicUrl,
+        musicArtistName: currentState.musicArtistName,
+        musicSongName: currentState.musicSongName,
         categoryId: currentState.categoryId,
         selectedTags: [...currentState.selectedTags],
         status: currentState.status,
@@ -710,11 +731,35 @@ export default function EditArticlePage() {
                     id="musicUrl"
                     value={musicUrl}
                     onChange={(e) => setMusicUrl(e.target.value)}
-                    placeholder="https://example.com/music.mp3"
+                    placeholder="https://example.com/music.mp3 or YouTube URL"
                     type="url"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Optional. If provided, music will auto-play when the article is viewed. Users can toggle it off.
+                    Optional. Supports direct audio files or YouTube URLs. Music will auto-play when the article is viewed.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="musicSongName">Song Name</Label>
+                  <Input
+                    id="musicSongName"
+                    value={musicSongName}
+                    onChange={(e) => setMusicSongName(e.target.value)}
+                    placeholder="Song title"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. Used for credits display.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="musicArtistName">Artist Name</Label>
+                  <Input
+                    id="musicArtistName"
+                    value={musicArtistName}
+                    onChange={(e) => setMusicArtistName(e.target.value)}
+                    placeholder="Artist/Composer name"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional. Used for credits display.
                   </p>
                 </div>
               </CardContent>
@@ -766,11 +811,24 @@ export default function EditArticlePage() {
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
             <DialogTitle>Article Preview</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          
+          {/* Music Player in Preview */}
+          {musicUrl && (
+            <div className="px-6 pb-2 flex-shrink-0">
+              <ArticleMusicPlayer 
+                musicUrl={musicUrl} 
+                musicArtistName={musicArtistName}
+                musicSongName={musicSongName}
+                variant="relative" 
+              />
+            </div>
+          )}
+          
+          <div className="px-6 pb-6 space-y-6 overflow-y-auto flex-1">
             {coverImage && (
               <img
                 src={coverImage}
