@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
@@ -21,9 +21,9 @@ import { TiptapEditor } from '@/components/admin/tiptap-editor';
 import { useAuth } from '@/lib/auth-context';
 import slugify from 'slugify';
 import readingTime from 'reading-time';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { Category, Tag } from '@/lib/supabase';
+import { Category, Tag, Series } from '@/lib/supabase';
 
 export default function NewArticlePage() {
   const [title, setTitle] = useState('');
@@ -31,6 +31,7 @@ export default function NewArticlePage() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [musicPlaylist, setMusicPlaylist] = useState<Array<{link: string; song_name?: string; artist?: string}>>([]);
   const [categoryId, setCategoryId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -38,12 +39,17 @@ export default function NewArticlePage() {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+  const [seriesPosition, setSeriesPosition] = useState<number>(1);
 
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,6 +59,7 @@ export default function NewArticlePage() {
   useEffect(() => {
     fetchCategories();
     fetchTags();
+    fetchSeries();
   }, []);
 
   useEffect(() => {
@@ -70,6 +77,11 @@ export default function NewArticlePage() {
   async function fetchTags() {
     const { data } = await supabase.from('tags').select('*').order('name');
     if (data) setTags(data);
+  }
+
+  async function fetchSeries() {
+    const { data } = await supabase.from('series').select('*').order('name');
+    if (data) setSeries(data);
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,6 +104,7 @@ export default function NewArticlePage() {
           content,
           excerpt,
           cover_image: coverImage || null,
+          music_playlist: musicPlaylist || [],
           author_id: user.id,
           category_id: categoryId || null,
           status,
@@ -120,6 +133,19 @@ export default function NewArticlePage() {
         if (tagsError) throw tagsError;
       }
 
+      // Insert article series relationship
+      if (selectedSeriesId && article) {
+        const { error: seriesError } = await supabase
+          .from('article_series')
+          .insert({
+            article_id: article.id,
+            series_id: selectedSeriesId,
+            position: seriesPosition,
+          });
+
+        if (seriesError) throw seriesError;
+      }
+
       toast({
         title: 'Success',
         description: `Article ${status === 'published' ? 'published' : 'saved as draft'} successfully`,
@@ -144,23 +170,77 @@ export default function NewArticlePage() {
     );
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      setCoverImage(publicUrl);
+
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully',
+      });
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to upload image',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link href="/admin/articles">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">New Article</h1>
-            <p className="text-muted-foreground">Create a new blog post</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link href="/admin/articles">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold">New Article</h1>
+              <p className="text-muted-foreground">Create a new blog post</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -296,12 +376,37 @@ export default function NewArticlePage() {
               <CardHeader>
                 <CardTitle>Cover Image</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Input
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  placeholder="Image URL or upload"
-                />
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    placeholder="Image URL or upload"
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    {uploadingImage ? (
+                      'Uploading...'
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload
+                      </>
+                    )}
+                  </Button>
+                </div>
                 {coverImage && (
                   <img
                     src={coverImage}
@@ -309,6 +414,90 @@ export default function NewArticlePage() {
                     className="mt-4 rounded-lg w-full"
                   />
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Background Music Playlist</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {musicPlaylist.map((song, index) => (
+                    <div key={index} className="p-3 border rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Song {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newPlaylist = musicPlaylist.filter((_, i) => i !== index);
+                            setMusicPlaylist(newPlaylist);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div>
+                        <Label htmlFor={`song-link-${index}`}>Link</Label>
+                        <Input
+                          id={`song-link-${index}`}
+                          value={song.link}
+                          onChange={(e) => {
+                            const newPlaylist = [...musicPlaylist];
+                            newPlaylist[index].link = e.target.value;
+                            setMusicPlaylist(newPlaylist);
+                          }}
+                          placeholder="https://example.com/music.mp3 or YouTube URL"
+                          type="url"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor={`song-name-${index}`}>Song Name</Label>
+                          <Input
+                            id={`song-name-${index}`}
+                            value={song.song_name || ''}
+                            onChange={(e) => {
+                              const newPlaylist = [...musicPlaylist];
+                              newPlaylist[index].song_name = e.target.value;
+                              setMusicPlaylist(newPlaylist);
+                            }}
+                            placeholder="Song title"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`song-artist-${index}`}>Artist</Label>
+                          <Input
+                            id={`song-artist-${index}`}
+                            value={song.artist || ''}
+                            onChange={(e) => {
+                              const newPlaylist = [...musicPlaylist];
+                              newPlaylist[index].artist = e.target.value;
+                              setMusicPlaylist(newPlaylist);
+                            }}
+                            placeholder="Artist name"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setMusicPlaylist([...musicPlaylist, { link: '', song_name: '', artist: '' }]);
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Song
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Optional. Songs will play sequentially. Supports direct audio files or YouTube URLs.
+                </p>
               </CardContent>
             </Card>
 
@@ -353,6 +542,50 @@ export default function NewArticlePage() {
                 {tags.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No tags available. <Link href="/admin/tags" className="text-primary">Create one</Link>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Series</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select 
+                  value={selectedSeriesId || undefined} 
+                  onValueChange={(value) => setSelectedSeriesId(value || '')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select series (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {series.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSeriesId && (
+                  <div>
+                    <Label htmlFor="seriesPosition">Position in Series</Label>
+                    <Input
+                      id="seriesPosition"
+                      type="number"
+                      min="1"
+                      value={seriesPosition}
+                      onChange={(e) => setSeriesPosition(parseInt(e.target.value) || 1)}
+                      placeholder="1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Order of this article in the series
+                    </p>
+                  </div>
+                )}
+                {series.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No series available. <Link href="/admin/series" className="text-primary">Create one</Link>
                   </p>
                 )}
               </CardContent>

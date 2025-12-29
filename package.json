@@ -105,6 +105,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tiptap/core": "3.6.6",
     "dotenv": "^17.2.3"
   }
 }
