@@ -30,7 +30,7 @@ export const games: Game[] = [
     excerpt: "Test and improve your Hindi Speed Reading with engaging paragraphs and stories. Track your progress and challenge yourself to read faster.",
     category: gameCategories[2].name, // Language Games
     difficulty: "Beginner to Intermediate",
-    image: "/images/hindi-reading.svg",
+    image: "/images/hindi-reading.png",
     path: "/mini-games/hindi-reading",
     featured: true
   },
@@ -40,7 +40,7 @@ export const games: Game[] = [
     excerpt: "A multiplayer number guessing game where players take turns to guess a secret number using Bulls and Cows as clues.",
     category: gameCategories[3].name, // Brain Teasers
     difficulty: "Easy to Hard",
-    image: "/images/cows-and-bulls.svg", 
+    image: "/images/cows-and-bulls.png", 
     path: "/mini-games/cows-and-bulls",
     featured: true
   }
