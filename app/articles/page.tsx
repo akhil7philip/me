@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +10,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { createBrowserClient } from '@supabase/ssr';
 import { Article, Category, Tag } from "@/lib/supabase";
 import { Search, Eye } from "lucide-react";
+import { SectionNavigation } from "@/components/section-navigation";
+import { PageContent } from "@/components/page-content";
 
 export default function ArticlesHub() {
   const [articles, setArticles] = useState<any[]>([]);
@@ -99,25 +100,21 @@ export default function ArticlesHub() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-8 flex items-center">
-          <Link href="/" className="mr-4">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-              <span className="sr-only">Back to Home</span>
-            </Button>
-          </Link>
-          <div className="flex-1 text-center">
-            <h1 className="text-4xl font-bold text-primary mb-2">Blog</h1>
-            <p className="text-muted-foreground">Read, Learn, Grow</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex">
+      <SectionNavigation />
 
-      <main className="container mx-auto px-4 py-8">
+      <div className="flex-1 ml-24">
+        <PageContent>
+          <header className="border-b">
+            <div className="container mx-auto px-4 py-8">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-primary mb-2">Blog</h1>
+                <p className="text-muted-foreground">Read, Learn, Grow</p>
+              </div>
+            </div>
+          </header>
+
+          <main className="container mx-auto px-4 py-8">
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
@@ -250,7 +247,9 @@ export default function ArticlesHub() {
             )}
           </TabsContent>
         </Tabs>
-      </main>
+          </main>
+        </PageContent>
+      </div>
     </div>
   );
 } 

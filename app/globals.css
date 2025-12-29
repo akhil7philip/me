@@ -83,3 +83,76 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+@layer utilities {
+  /* Performance-optimized animations with GPU acceleration */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateX(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(1rem);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Page content wrapper with smooth transitions */
+  .page-content {
+    will-change: transform, opacity;
+    animation: page-enter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  .page-entering {
+    animation: page-enter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* Legacy support */
+  .animate-in {
+    animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fade-in {
+    animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .slide-in-from-right-4 {
+    animation: slide-in-from-right 0.4s cubic-bezier(0.4, 0, 0.2, 1), fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .page-content,
+    .page-entering,
+    .animate-in,
+    .fade-in,
+    .slide-in-from-right-4 {
+      animation: none;
+      transition: opacity 0.2s ease;
+    }
+  }
+}
+

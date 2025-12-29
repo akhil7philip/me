@@ -13,7 +13,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  ArrowLeft, 
   Heart, 
   Flame, 
   Sparkles, 
@@ -29,6 +28,8 @@ import {
   Facebook,
   Link as LinkIcon,
 } from 'lucide-react';
+import { SectionNavigation } from '@/components/section-navigation';
+import { PageContent } from '@/components/page-content';
 import { generateHTML } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -352,25 +353,20 @@ export default function ArticlePage() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Reading Progress Bar */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-secondary z-50">
-        <div
-          className="h-full bg-primary transition-all duration-150"
-          style={{ width: `${readProgress}%` }}
-        />
-      </div>
+    <div className="min-h-screen bg-background flex">
+      <SectionNavigation />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/articles">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Articles
-            </Button>
-          </Link>
+      <div className="flex-1 ml-24">
+        {/* Reading Progress Bar */}
+        <div className="fixed top-0 left-24 right-0 h-1 bg-secondary z-40">
+          <div
+            className="h-full bg-primary transition-all duration-150"
+            style={{ width: `${readProgress}%` }}
+          />
         </div>
+
+        <PageContent>
+          <div className="container mx-auto px-4 py-8 max-w-4xl">
 
         {/* Article Header */}
         <article className="space-y-6">
@@ -599,6 +595,8 @@ export default function ArticlePage() {
             </Card>
           )}
         </article>
+          </div>
+        </PageContent>
       </div>
     </div>
   );

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -10,6 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { hindiTexts, HindiText } from "@/data/mini-games/hindi-texts";
+import { SectionNavigation } from "@/components/section-navigation";
+import { PageContent } from "@/components/page-content";
 import confetti from 'canvas-confetti';
 
 // Ideal reading speeds (characters per minute)
@@ -128,23 +128,18 @@ export default function HindiReading() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <header className="mb-6">
-        <div className="flex items-center relative mb-4">
-          <Link href="/mini-games" className="absolute left-0 z-10">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-              <span className="sr-only">Back to Games</span>
-            </Button>
-          </Link>
-          <div className="w-full text-center">
-            <h1 className="text-3xl font-bold">Hindi Speed Reading</h1>
-            <p className="text-gray-500">Test and improve your Hindi reading speed</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex">
+      <SectionNavigation />
+
+      <div className="flex-1 ml-24">
+        <PageContent>
+          <div className="container mx-auto py-8">
+          <header className="mb-6">
+            <div className="text-center mb-4">
+              <h1 className="text-3xl font-bold">Hindi Speed Reading</h1>
+              <p className="text-gray-500">Test and improve your Hindi reading speed</p>
+            </div>
+          </header>
 
       <Alert className="mb-6">
         <AlertDescription>
@@ -307,6 +302,9 @@ export default function HindiReading() {
           )}
         </CardFooter>
       </Card>
+          </div>
+        </PageContent>
+      </div>
     </div>
   );
 } 
