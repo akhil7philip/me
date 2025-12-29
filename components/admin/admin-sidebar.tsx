@@ -21,6 +21,7 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  Quote,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -35,6 +36,7 @@ type ArticleListItem = Pick<Article, 'id' | 'title' | 'status' | 'created_at'>;
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
+  { href: '/admin/quotes', label: 'Quotes', icon: Quote },
   { href: '/admin/tags', label: 'Tags', icon: Tags },
   { href: '/admin/categories', label: 'Categories', icon: FolderTree },
   { href: '/admin/series', label: 'Series', icon: BookOpen },

@@ -167,8 +167,8 @@ export default function ArticlesHub() {
             <div className="container mx-auto px-4 py-8">
               <div className="flex justify-between items-center">
                 <div className="text-center flex-1">
-                  <h1 className="text-4xl font-bold text-primary mb-2">Blog</h1>
-                  <p className="text-muted-foreground">Read, Learn, Grow</p>
+                  <h1 className="text-4xl font-bold text-primary mb-2">Paras</h1>
+                  <p className="text-muted-foreground">To find order in the chaos</p>
                 </div>
                 {/* View Mode Toggle */}
                 <div className="flex items-center gap-2 border rounded-lg p-1 bg-muted/50">

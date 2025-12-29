@@ -2,13 +2,14 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useCallback } from "react";
-import { User, BookOpen, Gamepad2 } from "lucide-react";
+import { User, BookOpen, Gamepad2, Quote } from "lucide-react";
 
-type Section = "about" | "blog" | "games";
+type Section = "about" | "blog" | "quotes" | "games";
 
 const sections = [
   { id: "about" as Section, label: "About", icon: User, path: "/" },
   { id: "blog" as Section, label: "Blog", icon: BookOpen, path: "/articles" },
+  { id: "quotes" as Section, label: "Quotes", icon: Quote, path: "/quotes" },
   { id: "games" as Section, label: "Games", icon: Gamepad2, path: "/mini-games" },
 ] as const;
 
@@ -18,6 +19,7 @@ export function SectionNavigation() {
 
   const activeSection = useMemo((): Section => {
     if (pathname?.startsWith("/articles")) return "blog";
+    if (pathname?.startsWith("/quotes")) return "quotes";
     if (pathname?.startsWith("/mini-games")) return "games";
     return "about";
   }, [pathname]);

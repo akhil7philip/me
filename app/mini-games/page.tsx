@@ -28,8 +28,8 @@ export default function MiniGamesHub() {
           <header className="border-b">
             <div className="container mx-auto px-4 py-8">
               <div className="text-center">
-                <h1 className="text-4xl font-bold text-primary mb-2">Mini-Games</h1>
-                <p className="text-muted-foreground">Fun learning activities</p>
+                <h1 className="text-4xl font-bold text-primary mb-2">Games</h1>
+                <p className="text-muted-foreground">Fun shall not be denied</p>
               </div>
             </div>
           </header>
