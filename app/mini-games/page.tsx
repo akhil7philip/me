@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { games, gameCategories, Game, GameCategoryConfig } from "@/data/mini-games/metadata";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { SectionNavigation } from "@/components/section-navigation";
+import { PageContent } from "@/components/page-content";
 
 export default function MiniGamesHub() {
   const [activeCategory, setActiveCategory] = useState(gameCategories[0].name);
@@ -19,25 +20,21 @@ export default function MiniGamesHub() {
       : games.filter((game: Game) => game.category === activeCategory);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-8 flex items-center">
-          <Link href="/" className="mr-4">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-              <span className="sr-only">Back to Home</span>
-            </Button>
-          </Link>
-          <div className="flex-1 text-center">
-            <h1 className="text-4xl font-bold text-primary mb-2">Mini-Games</h1>
-            <p className="text-muted-foreground">Fun learning activities</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex">
+      <SectionNavigation />
 
-      <main className="container mx-auto px-4 py-8">
+      <div className="flex-1 ml-24">
+        <PageContent>
+          <header className="border-b">
+            <div className="container mx-auto px-4 py-8">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-primary mb-2">Games</h1>
+                <p className="text-muted-foreground">Fun shall not be denied</p>
+              </div>
+            </div>
+          </header>
+
+          <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue={gameCategories[0].name} className="space-y-8">
           <ScrollArea className="w-full whitespace-nowrap">
             <TabsList className="inline-flex w-full justify-start space-x-4 p-0 bg-transparent">
@@ -88,7 +85,9 @@ export default function MiniGamesHub() {
             </TabsContent>
           ))}
         </Tabs>
-      </main>
+          </main>
+        </PageContent>
+      </div>
     </div>
   );
 } 

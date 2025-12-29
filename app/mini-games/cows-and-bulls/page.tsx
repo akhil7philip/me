@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
+import { SectionNavigation } from "@/components/section-navigation";
+import { PageContent } from "@/components/page-content";
 import confetti from 'canvas-confetti';
 import { createClient, Player, GameSession } from "@/lib/supabase";
 
@@ -702,23 +704,18 @@ export default function CowsAndBulls() {
   };
   
   return (
-    <div className="container mx-auto py-8">
-      <header className="mb-6">
-        <div className="flex items-center relative mb-4">
-          <Link href="/mini-games" className="absolute left-0 z-10">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-              <span className="sr-only">Back to Games</span>
-            </Button>
-          </Link>
-          <div className="w-full text-center">
-            <h1 className="text-3xl font-bold">Cows and Bulls</h1>
-            <p className="text-gray-500">A multiplayer number guessing game</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex">
+      <SectionNavigation />
+
+      <div className="flex-1 ml-24">
+        <PageContent>
+          <div className="container mx-auto py-8">
+          <header className="mb-6">
+            <div className="text-center mb-4">
+              <h1 className="text-3xl font-bold">Cows and Bulls</h1>
+              <p className="text-gray-500">A multiplayer number guessing game</p>
+            </div>
+          </header>
       
       {showInstructions ? (
         <Card className="mb-6">
@@ -1152,6 +1149,9 @@ export default function CowsAndBulls() {
           </div>
         )
       )}
+          </div>
+        </PageContent>
+      </div>
     </div>
   );
 }

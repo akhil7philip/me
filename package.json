@@ -10,7 +10,9 @@
     "generate-og": "node scripts/generate-og-images-safe.js || echo 'OG image generation failed, continuing build'",
     "generate-feeds": "node scripts/generate-static-feeds.js",
     "build:local": "npm run generate-og && npm run build",
-    "prepare-deploy": "npm run generate-og && git add public/images/og && git commit -m 'Update OG images' && git push"
+    "prepare-deploy": "npm run generate-og && git add public/images/og && git commit -m 'Update OG images' && git push",
+    "clean": "rm -rf .next node_modules/.cache",
+    "clean:all": "rm -rf .next node_modules/.cache out"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

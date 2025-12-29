@@ -120,4 +120,12 @@ export type ArticleSeries = {
   series_id: string;
   position: number;
   series?: Series;
+};
+
+export type Quote = {
+  id: string;
+  quote_text: string;
+  source: string;
+  created_at: string;
+  updated_at: string;
 }; 

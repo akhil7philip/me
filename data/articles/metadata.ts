@@ -23,7 +23,4 @@ export const categories: CategoryConfig[] = [
   { name: "Reflection", icon: BookMarked },
 ];
 
-export const articles: Article[] = [
-  // Articles are now fetched from Supabase database
-  // This array is kept for type compatibility but should remain empty
-];
+export const articles: Article[] = [];
