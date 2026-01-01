@@ -208,5 +208,45 @@
       transition: opacity 0.2s ease;
     }
   }
+
+  /* Book animations */
+  .perspective-1000 {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+
+  .duration-600 {
+    transition-duration: 600ms;
+  }
+
+  @keyframes bookmark-fold {
+    0% {
+      opacity: 0;
+      transform: perspective(500px) rotateX(0deg) translateY(-10px);
+    }
+    50% {
+      opacity: 1;
+      transform: perspective(500px) rotateX(-8deg) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: perspective(500px) rotateX(-5deg) translateY(5px);
+    }
+  }
+
+  .animate-bookmark-fold {
+    animation: bookmark-fold 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .perspective-1000 * {
+      transition: opacity 0.2s ease !important;
+      transform: none !important;
+    }
+    .animate-bookmark-fold {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
 }
 
