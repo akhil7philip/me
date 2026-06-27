@@ -1,6 +1,5 @@
-// Admin article edit pages are dynamic and don't need static generation
-// Allow all dynamic params to be handled at runtime
-export const dynamic = 'force-dynamic';
+// Admin article edit pages must be statically generated for GitHub Pages export.
+export const dynamic = 'force-static';
 
 export default function AdminArticleEditLayout({
   children,
