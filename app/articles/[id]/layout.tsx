@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Generate metadata for each article dynamically
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const slug = params.id;
   
-  const supabase = await createClient();
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const { data: article, error } = await supabase
     .from('articles')
