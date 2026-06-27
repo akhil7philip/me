@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  trailingSlash: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: false },
+  images: { unoptimized: true },
   webpack: (config, { dev, isServer }) => {
     // Fix webpack caching issues for cloud storage environments (Google Drive)
     if (dev) {
