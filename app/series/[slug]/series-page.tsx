@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, BookOpen, Calendar, Clock, Eye } from "lucide-react";
 
@@ -18,7 +18,7 @@ export default function SeriesPage({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
 
   const { toast } = useToast();
-  const supabase = createBrowserClient(
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
