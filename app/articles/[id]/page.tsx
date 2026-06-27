@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import ArticlePage from './article-page';
+import dynamic from 'next/dynamic';
+
+const ArticlePage = dynamic(() => import('./article-page'), { ssr: false });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';

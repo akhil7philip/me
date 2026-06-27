@@ -1,4 +1,6 @@
-import EditArticlePage from './edit-article-page';
+import dynamic from 'next/dynamic';
+
+const EditArticlePage = dynamic(() => import('./edit-article-page'), { ssr: false });
 
 export async function generateStaticParams() {
   // Admin edit page is client-side only; generate a placeholder shell.
