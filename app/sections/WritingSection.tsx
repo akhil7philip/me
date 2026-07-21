@@ -13,8 +13,6 @@ gsap.registerPlugin(ScrollTrigger);
 const articles = [
   { title: "Coders' Code", excerpt: 'On the poetry hidden in clean code and the minds that craft it.', date: 'Dec 26, 2025', readTime: '2 min read', category: 'Reflection', categories: ['Reflection'], featured: false, image: '/images/articles/coders-code.png', href: '/articles/coders-code' },
   { title: 'Existentialist Engineer', excerpt: 'Navigating the tension between building systems and questioning existence.', date: 'Dec 26, 2025', readTime: '3 min read', category: 'Reflection', categories: ['Reflection'], featured: true, image: '/images/articles/existentialist.png', href: '/articles/existentialist-engineer' },
-  { title: 'The Art of Debugging', excerpt: 'A methodical approach to finding and fixing bugs in complex systems.', date: 'Dec 20, 2025', readTime: '5 min read', category: 'Tutorial', categories: ['Tutorial'], featured: false, image: '/images/articles/debugging.jpg', href: '/articles' },
-  { title: 'On Simplicity', excerpt: 'Why the best solutions are often the simplest ones, and how to find them.', date: 'Dec 15, 2025', readTime: '4 min read', category: 'Opinion', categories: ['Opinion'], featured: false, image: '/images/articles/simplicity.jpg', href: '/articles' },
 ];
 
 export function WritingSection() {
