@@ -6,17 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "generate-og": "node scripts/generate-og-images-safe.js || echo 'OG image generation failed, continuing build'",
-    "generate-feeds": "node scripts/generate-static-feeds.js",
-    "build:local": "npm run generate-og && npm run build",
-    "prepare-deploy": "npm run generate-og && git add public/images/og && git commit -m 'Update OG images' && git push",
-    "clean": "rm -rf .next node_modules/.cache",
-    "clean:all": "rm -rf .next node_modules/.cache out"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^3.9.0",
-    "@next/swc-wasm-nodejs": "13.5.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -49,6 +43,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.49.1",
     "@tailwindcss/typography": "^0.5.10",
+    "@tiptap/core": "^3.6.6",
     "@tiptap/extension-code-block-lowlight": "^3.6.6",
     "@tiptap/extension-image": "^3.6.6",
     "@tiptap/extension-link": "^3.6.6",
@@ -68,8 +63,6 @@
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
-    "bufferutil": "^4.0.9",
-    "canvas": "^2.11.2",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -78,7 +71,9 @@
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
+    "gsap": "^3.12.0",
     "input-otp": "^1.2.4",
+    "lenis": "^1.1.0",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.446.0",
     "next": "13.5.1",
@@ -102,12 +97,10 @@
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
-    "utf-8-validate": "^6.0.5",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@tiptap/core": "3.6.6",
     "dotenv": "^17.2.3"
   }
 }

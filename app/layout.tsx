@@ -1,18 +1,42 @@
-import './globals.css';
 import type { Metadata } from 'next';
-import { ThemeProvider } from "@/components/theme-provider";
-import { ClientLayout } from "@/components/client-layout";
-import { AuthProvider } from "@/lib/auth-context";
+import { Playfair_Display, Inter, JetBrains_Mono } from 'next/font/google';
+import './globals.css';
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+  weight: ['400', '500', '600'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+  weight: ['400'],
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || 
-    (process.env.NODE_ENV === 'production' 
-      ? 'https://akhilphilip.com' 
-      : 'http://localhost:3000')
-  ),
-  title: 'Akhil Philip',
-  description: 'Read, Code, Love',
+  title: 'Akhil Philip — Read, Code, Love',
+  description:
+    "A curious mind exploring the intersection of technology and creativity. Welcome to my little corner of the internet!",
+  keywords: ['Akhil Philip', 'Developer', 'Writer', 'Portfolio', 'Blog'],
+  authors: [{ name: 'Akhil Philip' }],
+  openGraph: {
+    title: 'Akhil Philip — Read, Code, Love',
+    description:
+      'A curious mind exploring the intersection of technology and creativity.',
+    type: 'website',
+    url: 'https://akhilphilip.com',
+  },
 };
 
 export default function RootLayout({
@@ -21,21 +45,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          storageKey="blog-theme"
-          forcedTheme="dark"
-        >
-          <AuthProvider>
-            <ClientLayout>
-              {children}
-            </ClientLayout>
-          </AuthProvider>
-        </ThemeProvider>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="min-h-screen bg-bg-primary text-text-primary">
+        {children}
       </body>
     </html>
   );

@@ -7,12 +7,24 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function generateStaticParams() {
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const { data: series } = await supabase.from('series').select('slug');
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: series } = await supabase.from('series').select('slug');
 
-  return (series || []).map((s) => ({
-    slug: s.slug,
-  }));
+    if (series && series.length > 0) {
+      return series.map((s) => ({
+        slug: s.slug,
+      }));
+    }
+  } catch {
+    // Supabase unreachable at build time — fall through to placeholder.
+  }
+
+  // output: 'export' requires at least one static param for a dynamic route.
+  // The series page is client-rendered and shows a not-found state for
+  // unknown slugs, so this placeholder only matters when the fetch above
+  // failed or no series exist yet.
+  return [{ slug: 'placeholder' }];
 }
 
 export default function SeriesPageWrapper({ params }: { params: { slug: string } }) {
