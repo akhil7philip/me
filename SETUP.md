@@ -19,8 +19,8 @@ This guide will help you set up your full-featured blog CMS powered by Next.js a
 ### 1.2 Run Database Migrations
 
 1. In your Supabase dashboard, go to the SQL Editor
-2. Copy the contents of `supabase/migrations/20250113_blog_system.sql`
-3. Paste and execute the SQL to create all necessary tables
+2. Run the migration files in chronological order, including `supabase/migrations/20261101_storage_media_policies.sql`
+3. This creates the tables, media bucket, and the required Storage RLS policies
 
 ### 1.3 Setup Storage Bucket
 
@@ -28,44 +28,18 @@ This guide will help you set up your full-featured blog CMS powered by Next.js a
 ```bash
 npx tsx scripts/setup-storage.ts
 ```
-This will create the bucket automatically. Then run the SQL policies shown in the output.
+This will create the bucket automatically. Run `supabase/migrations/20261101_storage_media_policies.sql` in the SQL Editor to install the Storage policies.
 
 **Option 2: Manual Setup**
 
 1. Go to Storage in your Supabase dashboard
 2. Create a new bucket called `media`
 3. Make it public
-4. Set up policies in the SQL Editor:
+4. Run `supabase/migrations/20261101_storage_media_policies.sql` in the SQL Editor. It creates the bucket policy set and limits uploads, updates, and deletes to each authenticated user's own folder.
+   For reference, the policy pattern is:
    ```sql
-   -- Drop existing policies if they exist (safe to run multiple times)
-   DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-   DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
-   DROP POLICY IF EXISTS "Authenticated users can update" ON storage.objects;
-   DROP POLICY IF EXISTS "Authenticated users can delete" ON storage.objects;
-   
-   -- Allow public read access
-   CREATE POLICY "Public Access" 
-   ON storage.objects 
-   FOR SELECT 
-   USING (bucket_id = 'media');
-   
-   -- Allow authenticated users to upload
-   CREATE POLICY "Authenticated users can upload" 
-   ON storage.objects 
-   FOR INSERT 
-   WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
-   
-   -- Allow authenticated users to update their own files
-   CREATE POLICY "Authenticated users can update" 
-   ON storage.objects 
-   FOR UPDATE 
-   USING (bucket_id = 'media' AND auth.role() = 'authenticated');
-   
-   -- Allow authenticated users to delete their own files
-   CREATE POLICY "Authenticated users can delete" 
-   ON storage.objects 
-   FOR DELETE 
-   USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+   bucket_id = 'media'
+   AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
    ```
 
 ### 1.4 Create Admin User

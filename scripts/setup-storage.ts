@@ -67,7 +67,8 @@ async function setupStorage() {
 
     // Set up storage policies
     console.log('\n🔒 Storage policies need to be set up manually.');
-    console.log('   Please run the following SQL in your Supabase SQL Editor:\n');
+    console.log('   Prefer running supabase/migrations/20261101_storage_media_policies.sql.');
+    console.log('   It is shown below for convenience:\n');
     
     const policiesSQL = `
 -- Drop existing policies if they exist (safe to run multiple times)
@@ -75,30 +76,42 @@ DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can update" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can delete" ON storage.objects;
+DROP POLICY IF EXISTS "Public read media objects" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload media to their folder" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update media in their folder" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete media in their folder" ON storage.objects;
 
 -- Allow public read access
-CREATE POLICY "Public Access" 
+CREATE POLICY "Public read media objects"
 ON storage.objects 
 FOR SELECT 
 USING (bucket_id = 'media');
 
--- Allow authenticated users to upload
-CREATE POLICY "Authenticated users can upload" 
-ON storage.objects 
-FOR INSERT 
-WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
+-- Limit authenticated users to their own <user-id>/ folder
+CREATE POLICY "Users can upload media to their folder"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'media'
+  AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+);
 
--- Allow authenticated users to update their own files
-CREATE POLICY "Authenticated users can update" 
-ON storage.objects 
-FOR UPDATE 
-USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+CREATE POLICY "Users can update media in their folder"
+ON storage.objects FOR UPDATE TO authenticated
+USING (
+  bucket_id = 'media'
+  AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+)
+WITH CHECK (
+  bucket_id = 'media'
+  AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+);
 
--- Allow authenticated users to delete their own files
-CREATE POLICY "Authenticated users can delete" 
-ON storage.objects 
-FOR DELETE 
-USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+CREATE POLICY "Users can delete media in their folder"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'media'
+  AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+);
     `.trim();
 
     console.log('='.repeat(60));
