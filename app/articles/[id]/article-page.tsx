@@ -50,6 +50,7 @@ import {
   LinkedinShareButton,
 } from 'react-share';
 import { ArticleContentRenderer } from '@/components/article-content-renderer';
+import { getPublishedArticle } from '@/lib/public-content';
 
 const lowlight = createLowlight(common);
 
@@ -118,12 +119,7 @@ export default function ArticlePage({ slug }: { slug: string }) {
   async function fetchArticle() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*, categories(*), article_tags(tags(*)), article_series(series_id, position, series(*))')
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .single();
+      const { data, error } = await getPublishedArticle(supabase, slug);
 
       if (error) throw error;
 

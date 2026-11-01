@@ -2,6 +2,9 @@ import dynamic from 'next/dynamic';
 
 const EditArticlePage = dynamic(() => import('./edit-article-page'), { ssr: false });
 
+// Admin article IDs are created after deployment and must remain routable.
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   // Admin edit page is client-side only; generate a placeholder shell.
   return [{ id: 'new' }];

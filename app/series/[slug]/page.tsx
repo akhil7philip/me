@@ -6,6 +6,9 @@ const SeriesPage = dynamic(() => import('./series-page'), { ssr: false });
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
+// Vercel serves slugs that are created after a deployment on demand.
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   try {
     const supabase = createClient(supabaseUrl, supabasePublishableKey);
