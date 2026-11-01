@@ -49,7 +49,6 @@ import {
   TwitterShareButton,
   LinkedinShareButton,
 } from 'react-share';
-import { ArticleMusicPlayer } from '@/components/article-music-player';
 import { ArticleContentRenderer } from '@/components/article-content-renderer';
 
 const lowlight = createLowlight(common);
@@ -401,11 +400,6 @@ export default function ArticlePage({ slug }: { slug: string }) {
           />
         </div>
 
-      {/* Music Player */}
-      <ArticleMusicPlayer 
-        musicPlaylist={article.music_playlist}
-      />
-
         <PageContent>
           <div className={`container mx-auto px-4 py-8 max-w-4xl ${article.music_url ? 'pt-14' : ''}`}>
 
@@ -692,4 +686,4 @@ export default function ArticlePage({ slug }: { slug: string }) {
       </div>
     </div>
   );
-}  
+}

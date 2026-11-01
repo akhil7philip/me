@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Playfair_Display, Inter, JetBrains_Mono } from 'next/font/google';
+import { SiteMusicPlayer } from '@/components/site-music-player';
 import './globals.css';
 
 const playfair = Playfair_Display({
@@ -51,6 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-bg-primary text-text-primary">
         {children}
+        <SiteMusicPlayer />
       </body>
     </html>
   );
