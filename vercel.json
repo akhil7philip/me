@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/articles/:slug",
+      "destination": "/read/?slug=:slug"
+    },
+    {
+      "source": "/articles/:slug/",
+      "destination": "/read/?slug=:slug"
+    },
+    {
       "source": "/admin/articles/:id/edit",
       "destination": "/admin/articles/edit/?id=:id"
     },
