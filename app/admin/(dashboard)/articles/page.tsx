@@ -252,7 +252,7 @@ export default function ArticlesPage() {
                       if (target.closest('[role="menu"]') || target.closest('button')) {
                         return;
                       }
-                      router.push(`/admin/articles/${article.id}/edit`);
+                      router.push(`/admin/articles/edit?id=${encodeURIComponent(article.id)}`);
                     }}
                   >
                     <TableCell className="font-medium">
@@ -285,7 +285,7 @@ export default function ArticlesPage() {
                             Preview
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/articles/${article.id}/edit`}>
+                            <Link href={`/admin/articles/edit?id=${encodeURIComponent(article.id)}`}>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </Link>

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin/articles/:id/edit",
+      "destination": "/admin/articles/edit/?id=:id"
+    },
+    {
+      "source": "/admin/articles/:id/edit/",
+      "destination": "/admin/articles/edit/?id=:id"
+    }
+  ]
+}
