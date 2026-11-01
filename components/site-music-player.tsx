@@ -4,27 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { ArticleMusicPlayer } from '@/components/article-music-player';
-
-type Song = {
-  link: string;
-  song_name?: string;
-  artist?: string;
-};
-
-type MusicArticle = {
-  music_playlist: Song[] | null;
-};
-
-function shuffle<T>(items: T[]): T[] {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-
-  return shuffled;
-}
+import { createSitePlaylist, type MusicArticle, type Song } from '@/lib/site-music';
 
 export function SiteMusicPlayer() {
   const pathname = usePathname();
@@ -47,17 +27,7 @@ export function SiteMusicPlayer() {
         return;
       }
 
-      const uniqueSongs = new Map<string, Song>();
-
-      for (const article of (data ?? []) as MusicArticle[]) {
-        for (const song of article.music_playlist ?? []) {
-          if (song?.link) {
-            uniqueSongs.set(song.link, song);
-          }
-        }
-      }
-
-      setPlaylist(shuffle(Array.from(uniqueSongs.values())));
+      setPlaylist(createSitePlaylist((data ?? []) as MusicArticle[]));
     }
 
     loadPlaylist();
