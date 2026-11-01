@@ -4,11 +4,11 @@ import dynamic from 'next/dynamic';
 const SeriesPage = dynamic(() => import('./series-page'), { ssr: false });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 export async function generateStaticParams() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = createClient(supabaseUrl, supabasePublishableKey);
     const { data: series } = await supabase.from('series').select('slug');
 
     if (series && series.length > 0) {

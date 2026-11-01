@@ -52,7 +52,7 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   );
 
   const fetchArticle = async () => {
@@ -267,4 +267,3 @@ export function ArticleLinkPreview({ slug, children, className }: ArticleLinkPre
     </HoverCard>
   );
 }
-

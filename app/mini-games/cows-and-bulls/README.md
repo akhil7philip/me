@@ -20,13 +20,13 @@ The game uses Supabase for real-time multiplayer functionality, allowing players
 1. **Create a Supabase Project**:
    - Sign up for a free account at [https://supabase.com](https://supabase.com)
    - Create a new project
-   - Once your project is created, note down the project URL and anon key from the API settings
+   - Once your project is created, note down the project URL and publishable key from the API settings
 
 2. **Configure Environment Variables**:
    - Create a `.env.local` file in the root of the project with the following variables:
    ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
    ```
 
 3. **Set Up the Database**:

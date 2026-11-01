@@ -8,7 +8,7 @@ const siteDescription = 'Read, Code, Love';
 // Check if Supabase credentials are available
 const hasSupabaseCredentials = 
   process.env.NEXT_PUBLIC_SUPABASE_URL && 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 let supabase = null;
 
@@ -16,7 +16,7 @@ if (hasSupabaseCredentials) {
   const { createClient } = require('@supabase/supabase-js');
   supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   );
 }
 
@@ -172,4 +172,3 @@ main().catch((error) => {
   // Don't exit with error code to prevent build failure
   process.exit(0);
 });
-

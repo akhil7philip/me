@@ -19,25 +19,25 @@ const envPath = resolve(process.cwd(), '.env.local');
 dotenv.config({ path: envPath });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || '';
 const authorId = process.env.AUTHOR_ID || '';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Error: Missing required environment variables!');
   console.error('Please ensure .env.local contains:');
   console.error('  - NEXT_PUBLIC_SUPABASE_URL');
-  console.error('  - NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  console.error('  - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
   console.error('\nOptional (for admin operations):');
-  console.error('  - SUPABASE_SERVICE_ROLE_KEY (for listing users)');
+  console.error('  - SUPABASE_SECRET_KEY (for listing users)');
   console.error('  - AUTHOR_ID (to specify author directly)');
   process.exit(1);
 }
 
-// Create clients - use service role for admin operations, anon key for regular DB operations
+// Create clients - use a secret key for admin operations and a publishable key for regular DB operations.
 const supabase = createClient(supabaseUrl, supabaseKey);
-const supabaseAdmin = supabaseServiceRoleKey 
-  ? createClient(supabaseUrl, supabaseServiceRoleKey)
+const supabaseAdmin = supabaseSecretKey
+  ? createClient(supabaseUrl, supabaseSecretKey)
   : null;
 
 // Import your existing articles metadata
@@ -124,7 +124,7 @@ async function migrateArticles() {
         if (!finalAuthorId) {
           console.error('Error: No author ID found. Please either:');
           console.error('  1. Set AUTHOR_ID in .env.local, or');
-          console.error('  2. Set SUPABASE_SERVICE_ROLE_KEY to auto-detect users');
+          console.error('  2. Set SUPABASE_SECRET_KEY to auto-detect users');
           continue;
         }
       }
@@ -164,4 +164,3 @@ async function migrateArticles() {
 
 // Run migration
 migrateArticles().catch(console.error);
-

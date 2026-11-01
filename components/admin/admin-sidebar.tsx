@@ -59,7 +59,7 @@ export function AdminSidebar() {
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   );
 
   // Check if we're on article edit/new pages
@@ -210,4 +210,3 @@ export function AdminSidebar() {
     </div>
   );
 }
-

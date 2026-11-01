@@ -24,7 +24,7 @@ Add these 3 secrets:
 | Secret Name | Value |
 |------------|-------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Your Supabase publishable key |
 | `NEXT_PUBLIC_SITE_URL` | Your GitHub Pages URL |
 
 Find Supabase values at: `https://app.supabase.com/project/_/settings/api`
@@ -101,5 +101,4 @@ Your site is now live at:
 ---
 
 **That's it! Your site should be live now! 🎉**
-
 

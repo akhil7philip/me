@@ -4,7 +4,7 @@
  * 
  * This script requires:
  * - NEXT_PUBLIC_SUPABASE_URL
- * - SUPABASE_SERVICE_ROLE_KEY (for admin operations)
+ * - SUPABASE_SECRET_KEY (for admin operations)
  * 
  * Run with: npx tsx scripts/setup-storage.ts
  */
@@ -17,17 +17,17 @@ import { createClient } from '@supabase/supabase-js';
 config({ path: resolve(process.cwd(), '.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!supabaseUrl || !supabaseSecretKey) {
   console.error('❌ Missing required environment variables:');
   console.error('   - NEXT_PUBLIC_SUPABASE_URL');
-  console.error('   - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('   - SUPABASE_SECRET_KEY');
   console.error('\nPlease add these to your .env.local file');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -121,4 +121,3 @@ USING (bucket_id = 'media' AND auth.role() = 'authenticated');
 }
 
 setupStorage();
-

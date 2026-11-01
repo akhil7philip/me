@@ -198,7 +198,7 @@ export default function SettingsPage() {
               <strong>NEXT_PUBLIC_SUPABASE_URL</strong> - Your Supabase project URL
             </div>
             <div className="p-3 bg-secondary rounded">
-              <strong>NEXT_PUBLIC_SUPABASE_ANON_KEY</strong> - Your Supabase anon key
+              <strong>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</strong> - Your Supabase publishable key
             </div>
             <div className="p-3 bg-secondary rounded">
               <strong>NEXT_PUBLIC_SITE_URL</strong> - Your site URL (for SEO)
@@ -212,4 +212,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

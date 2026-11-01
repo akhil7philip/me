@@ -58,7 +58,7 @@ You need to create a user in your Supabase project:
 Your `.env.local` is already configured:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://yznvlbtooscmheyflmev.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 ## 📊 Database Schema

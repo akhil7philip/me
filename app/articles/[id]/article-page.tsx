@@ -92,7 +92,7 @@ export default function ArticlePage({ slug }: { slug: string }) {
   const { toast } = useToast();
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   );
 
   useEffect(() => {

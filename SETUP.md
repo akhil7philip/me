@@ -83,11 +83,11 @@ This will create the bucket automatically. Then run the SQL policies shown in th
 
 2. Fill in your Supabase credentials:
    - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon/public key
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
    - `NEXT_PUBLIC_SITE_URL`: Your site URL (for sitemap and RSS)
    
    Optional (for migration script):
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (for admin operations)
+   - `SUPABASE_SECRET_KEY`: Your Supabase secret key (for server-only admin operations)
    - `AUTHOR_ID`: Author user ID to use for migrated articles (if not set, script will try to auto-detect)
 
 ## Step 3: Install Dependencies
@@ -104,7 +104,7 @@ If you have existing markdown articles, update `scripts/migrate-articles.ts` wit
 npx tsx scripts/migrate-articles.ts
 ```
 
-**Note:** The migration script requires environment variables to be set in `.env.local`. If you want the script to automatically detect the author ID, add `SUPABASE_SERVICE_ROLE_KEY` to your `.env.local`. Alternatively, you can set `AUTHOR_ID` directly to specify which user should be the author of migrated articles.
+**Note:** The migration script requires environment variables to be set in `.env.local`. If you want the script to automatically detect the author ID, add `SUPABASE_SECRET_KEY` to your `.env.local`. Alternatively, you can set `AUTHOR_ID` directly to specify which user should be the author of migrated articles.
 
 ## Step 5: Start Development Server
 
@@ -247,7 +247,7 @@ To enable email newsletters:
 ### Database errors?
 - Ensure all migrations have run successfully
 - Check RLS policies are enabled
-- Verify your Supabase anon key has correct permissions
+- Verify your Supabase publishable key has correct permissions
 
 ### Images not uploading?
 - Check Supabase Storage bucket is created and public
@@ -264,4 +264,3 @@ For issues or questions:
 ## License
 
 MIT License - feel free to use this for your own projects!
-

@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 // Generate metadata for each article dynamically
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const slug = params.id;
   
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient(supabaseUrl, supabasePublishableKey);
 
   const { data: article, error } = await supabase
     .from('articles')
@@ -65,4 +65,4 @@ export default function ArticleLayout({
       {children}
     </>
   );
-} 
+}
